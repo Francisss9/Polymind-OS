@@ -790,3 +790,369 @@ table.trades tbody tr:hover td {
 #gate:not(.hidden) ~ .shortcut-hint {
   display: none;
 }
+
+/* =========================================================
+   PERIOD TABS
+   ========================================================= */
+
+.period-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.period-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 3px;
+}
+
+.period-tab {
+  padding: 5px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: calc(var(--radius-md) - 2px);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  letter-spacing: 0.01em;
+}
+.period-tab:hover { color: var(--text); }
+.period-tab.active {
+  background: var(--accent);
+  color: var(--text-inverse);
+  font-weight: 600;
+}
+
+/* =========================================================
+   CALENDAR PANEL
+   ========================================================= */
+
+.calendar-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cal-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+
+.cal-nav-btn {
+  background: none;
+  border: none;
+  padding: 5px 7px;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  transition: background 0.12s, color 0.12s;
+  line-height: 1;
+}
+.cal-nav-btn:hover { background: var(--bg-hover); color: var(--text); }
+
+/* ---- Daily calendar grid ---- */
+
+.calendar-grid {
+  padding: 0;
+}
+
+/* Daily = 7-column week grid */
+.cal-daily {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.cal-daily .cal-weekday-header {
+  text-align: center;
+  padding: 10px 6px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cal-day {
+  min-height: 88px;
+  padding: 8px 9px;
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  position: relative;
+  vertical-align: top;
+  transition: background 0.1s;
+}
+.cal-day:nth-child(7n) { border-right: none; }
+.cal-day.cal-today {
+  background: rgba(255,255,255,0.03);
+  outline: 1px solid rgba(255,255,255,0.1);
+  outline-offset: -1px;
+}
+.cal-day.cal-empty { background: transparent; opacity: 0.25; }
+.cal-day.cal-other-month { opacity: 0.35; }
+
+.cal-day-num {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+  line-height: 1;
+}
+.cal-today .cal-day-num { color: var(--text); }
+
+/* Trade pills in calendar */
+.cal-trade-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  margin-bottom: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: filter 0.1s;
+}
+.cal-trade-pill:hover { filter: brightness(1.15); }
+.cal-trade-pill.win {
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+}
+.cal-trade-pill.loss {
+  background: rgba(107,107,107,0.18);
+  color: #888;
+}
+.cal-trade-pill.breakeven {
+  background: rgba(144,144,144,0.12);
+  color: #909090;
+}
+
+.cal-trade-pair { font-weight: 600; white-space: nowrap; }
+.cal-trade-pnl { white-space: nowrap; }
+.cal-trade-pnl.pos { color: #d4d4d4; }
+.cal-trade-pnl.neg { color: #6b6b6b; }
+
+.cal-overflow {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ---- Weekly layout ---- */
+.cal-weekly {
+  display: flex;
+  flex-direction: column;
+}
+
+.cal-week-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 60px;
+}
+.cal-week-row:last-child { border-bottom: none; }
+
+.cal-week-label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 12px 16px;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+.cal-week-label .week-num {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  margin-bottom: 2px;
+}
+.cal-week-label .week-range {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.cal-week-trades {
+  padding: 10px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-content: flex-start;
+}
+
+/* Week summary pill */
+.cal-week-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border-subtle);
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+.week-pnl-val {
+  font-size: 13px;
+  font-weight: 600;
+}
+.week-pnl-val.pos { color: var(--text); }
+.week-pnl-val.neg { color: var(--text-muted); }
+.week-trade-count {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* ---- Monthly layout ---- */
+.cal-monthly {
+  display: flex;
+  flex-direction: column;
+}
+
+.cal-month-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 56px;
+}
+.cal-month-row:last-child { border-bottom: none; }
+
+.cal-month-label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 12px 16px;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+.cal-month-label .month-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.cal-month-label .month-pnl {
+  font-size: 12px;
+  font-weight: 500;
+}
+.month-pnl.pos { color: var(--text); }
+.month-pnl.neg { color: var(--text-muted); }
+
+.cal-month-trades {
+  padding: 10px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-content: flex-start;
+}
+
+/* ---- Quarterly layout ---- */
+.cal-quarterly {
+  display: flex;
+  flex-direction: column;
+}
+
+.cal-quarter-row {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 64px;
+}
+.cal-quarter-row:last-child { border-bottom: none; }
+
+.cal-quarter-label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 14px 16px;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+.cal-quarter-label .q-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.cal-quarter-label .q-pnl {
+  font-size: 12px;
+  font-weight: 500;
+}
+.q-pnl.pos { color: var(--text); }
+.q-pnl.neg { color: var(--text-muted); }
+
+.cal-quarter-months {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+}
+
+.cal-q-month-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.cal-q-month-row + .cal-q-month-row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.q-month-name {
+  font-size: 11px;
+  color: var(--text-muted);
+  width: 32px;
+  flex-shrink: 0;
+}
+.q-month-bar-wrap {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.q-month-bar {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--text);
+  transition: width 0.4s ease;
+}
+.q-month-bar.neg { background: #444; }
+.q-month-pnl {
+  font-size: 11px;
+  font-weight: 500;
+  min-width: 50px;
+  text-align: right;
+}
+.q-month-pnl.pos { color: var(--text); }
+.q-month-pnl.neg { color: var(--text-muted); }
+.q-month-trades {
+  font-size: 10px;
+  color: var(--text-muted);
+  min-width: 48px;
+  text-align: right;
+}
+
+
+/* pos/neg utility used by calendar */
+.pos { color: var(--win) !important; }
+.neg { color: var(--loss) !important; }

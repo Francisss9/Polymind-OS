@@ -124,26 +124,8 @@ function animateNumber(el, target, isFloat = true, prefix = '') {
 }
 
 function updateStats() {
-  const src = filteredTrades;
-  const totalPnl = src.reduce((s, t) => s + (t.pnl || 0), 0);
-  const wins = src.filter((t) => (t.result || '').toLowerCase() === 'win' || t.pnl > 0).length;
-  const winRate = src.length ? Math.round((wins / src.length) * 100) : 0;
-  const rrVals = src.map((t) => t.rr).filter((v) => typeof v === 'number');
-  const avgRr = rrVals.length ? rrVals.reduce((a, b) => a + b, 0) / rrVals.length : null;
-
-  const pnlEl = $('#stat-pnl');
-  animateNumber(pnlEl, totalPnl, true, totalPnl > 0 ? '+' : '');
-  pnlEl.className = `value ${totalPnl > 0 ? 'positive' : totalPnl < 0 ? 'negative' : ''}`;
-
-  const wrEl = $('#stat-winrate');
-  if (src.length) { animateNumber(wrEl, winRate, false, '', '%'); wrEl.dataset.suffix = '%'; }
-  else wrEl.textContent = '—';
-
-  animateNumber($('#stat-count'), src.length, false);
-  if (avgRr != null) animateNumber($('#stat-rr'), avgRr, true);
-  else $('#stat-rr').textContent = '—';
-
-  $('#trades-count-label').textContent = `${src.length} trade${src.length === 1 ? '' : 's'}`;
+  // Stats are now handled by the calendar view's updatePeriodStats()
+  if (typeof updatePeriodStats === 'function') updatePeriodStats();
 }
 
 // Fix winrate display suffix
@@ -227,7 +209,7 @@ function applyFilter(q) {
         (t.direction||'').toLowerCase().includes(q) ||
         (t.notes||'').toLowerCase().includes(q))
     : [...trades];
-  renderTrades();
+  if (typeof renderCalendar === 'function') renderCalendar();
 }
 
 // =========================================================
@@ -250,7 +232,7 @@ function setSyncing(active) {
 async function loadCached() {
   trades = await window.polymind.trades.getCached();
   filteredTrades = [...trades];
-  renderTrades();
+  if (typeof renderCalendar === 'function') renderCalendar();
 }
 
 async function syncTrades() {
@@ -261,6 +243,8 @@ async function syncTrades() {
   try {
     const result = await window.polymind.trades.sync();
     trades = result.trades;
+    filteredTrades = [...trades];
+    if (typeof renderCalendar === 'function') renderCalendar();
     applyFilter($('#trades-search').value);
     updateSyncStatus(result.lastSyncedAt);
   } catch (err) {
@@ -584,6 +568,9 @@ function bindEvents() {
   setupToggle('toggle-pw', 'login-password');
   setupToggle('toggle-token', 'setup-token');
 
+  // Calendar
+  if (typeof initCalendar === 'function') initCalendar();
+
   // Keyboard shortcuts
   bindShortcuts();
 }
@@ -597,7 +584,7 @@ async function init() {
   // but setting inline ensures CSP allows it via 'self'
   const artBg = document.getElementById('gate-art-bg');
   if (artBg) {
-    artBg.style.backgroundImage = "url('../assets/login-bg.jpg')";
+    artBg.style.backgroundImage = "url('assets/login-bg.jpg')";
   }
 
   bindEvents();
