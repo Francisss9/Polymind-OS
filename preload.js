@@ -5,6 +5,9 @@ contextBridge.exposeInMainWorld('polymind', {
     get: () => ipcRenderer.invoke('config:get'),
     set: (payload) => ipcRenderer.invoke('config:set', payload),
   },
+  notion: {
+    test: (payload) => ipcRenderer.invoke('notion:test', payload),
+  },
   trades: {
     getCached: () => ipcRenderer.invoke('trades:getCached'),
     sync: () => ipcRenderer.invoke('trades:sync'),

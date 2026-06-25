@@ -8,74 +8,145 @@
   <link rel="stylesheet" href="styles/app.css" />
 </head>
 <body>
-  <!-- Private gate — connect Notion kernel before entering -->
+
+  <!-- ===== GATE ===== -->
   <div id="gate" class="gate hidden">
     <div class="gate-frame">
+
+      <!-- Left: multi-step auth -->
       <div class="gate-left">
         <div class="gate-logo" aria-hidden="true">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <svg width="36" height="36" viewBox="0 0 40 40" fill="none">
             <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="1.5"/>
             <line x1="12" y1="28" x2="28" y2="12" stroke="currentColor" stroke-width="1.5"/>
           </svg>
+          <span class="gate-brand-name">Polymind</span>
         </div>
 
-        <div id="setup-error" class="error-banner hidden"></div>
+        <!-- Step 1: email + password -->
+        <div id="step-login" class="gate-step">
+          <h2 class="gate-heading">Sign in</h2>
+          <p class="gate-sub">Enter your credentials to access your kernel.</p>
 
-        <form id="setup-form" class="gate-form">
+          <div id="login-error" class="error-banner hidden"></div>
+
+          <div class="field">
+            <label for="login-email">Email</label>
+            <div class="input-wrap">
+              <svg class="field-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+                <path d="M1 5l7 5 7-5" stroke="currentColor" stroke-width="1.2"/>
+              </svg>
+              <input id="login-email" type="email" placeholder="you@example.com" autocomplete="email" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="login-password">Password</label>
+            <div class="input-wrap">
+              <svg class="field-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M5 7V5a3 3 0 016 0v2M4 7h8v6H4V7z" stroke="currentColor" stroke-width="1.2"/>
+              </svg>
+              <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" />
+              <button type="button" class="toggle-pw" id="toggle-pw" title="Show password" tabindex="-1">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.2"/>
+                  <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="button" class="btn-connect" id="btn-login">
+            <span id="login-spinner" class="spinner hidden"></span>
+            Continue
+          </button>
+
+          <p class="gate-foot">
+            <button type="button" class="link-btn" id="btn-goto-token">
+              Use integration token instead
+            </button>
+          </p>
+        </div>
+
+        <!-- Step 2: Notion token (shown after login OR direct) -->
+        <div id="step-notion" class="gate-step hidden">
+          <button type="button" class="back-btn" id="btn-back-login">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            Back
+          </button>
+          <h2 class="gate-heading">Connect Notion</h2>
+          <p class="gate-sub">Link your Notion integration to start syncing.</p>
+
+          <div id="setup-error" class="error-banner hidden"></div>
+          <div id="setup-success" class="success-banner hidden"></div>
+
           <div class="field">
             <label for="setup-token">Integration token</label>
             <div class="input-wrap">
-              <svg class="field-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <svg class="field-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M5 7V5a3 3 0 016 0v2M4 7h8v6H4V7z" stroke="currentColor" stroke-width="1.2"/>
               </svg>
-              <input id="setup-token" type="password" placeholder="secret_..." autocomplete="off" required />
+              <input id="setup-token" type="password" placeholder="secret_…" autocomplete="off" />
+              <button type="button" class="toggle-pw" id="toggle-token" title="Show token" tabindex="-1">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.2"/>
+                  <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/>
+                </svg>
+              </button>
             </div>
           </div>
 
           <div class="field">
-            <label for="setup-database">Database ID</label>
+            <label for="setup-database">Database ID or URL</label>
             <div class="input-wrap">
-              <svg class="field-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <svg class="field-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <rect x="2" y="3" width="12" height="10" rx="1" stroke="currentColor" stroke-width="1.2"/>
                 <path d="M2 6h12M5 3V2M11 3V2" stroke="currentColor" stroke-width="1.2"/>
               </svg>
-              <input id="setup-database" type="text" placeholder="Trading Tracker kernel" autocomplete="off" required />
+              <input id="setup-database" type="text" placeholder="Paste ID or full Notion URL" autocomplete="off" />
             </div>
+            <div class="field-hint">Found in your database URL — the 32-character string after the last slash</div>
           </div>
 
-          <button type="submit" class="btn-connect">
+          <button type="button" class="btn-connect" id="btn-test-connect">
             <span id="connect-spinner" class="spinner hidden"></span>
-            Connect
+            Test & Connect
           </button>
-        </form>
 
-        <p class="gate-foot">
-          Don't have an integration?
-          <button type="button" class="link-btn" id="btn-create-integration">Create one</button>
-        </p>
+          <div class="gate-divider"><span>or</span></div>
 
-        <div class="gate-divider"><span>or</span></div>
-
-        <button type="button" class="btn-outline" id="btn-open-notion">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1zm1 2v8h8V4H4z"/>
-          </svg>
-          Open Notion integrations
-        </button>
+          <button type="button" class="btn-outline" id="btn-open-notion">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1zm1 2v8h8V4H4z"/>
+            </svg>
+            Open Notion integrations
+          </button>
+        </div>
       </div>
 
-      <div class="gate-right">
-        <img src="assets/columns.svg" alt="" class="gate-art" />
+      <!-- Right: decorative art panel -->
+      <div class="gate-right" id="gate-art-panel">
+        <div class="gate-art-overlay">
+          <div class="gate-art-label">Private kernel</div>
+          <div class="gate-art-sub">Your data stays yours.</div>
+        </div>
+        <!-- Custom image slot: add your image as gate-art-bg class or data-src -->
+        <div class="gate-art-bg" id="gate-art-bg"></div>
+        <div class="gate-art-grid"></div>
       </div>
+
     </div>
   </div>
 
-  <!-- Main shell — visible after kernel is connected -->
+  <!-- ===== APP SHELL ===== -->
   <div id="app-shell" class="hidden">
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-logo" aria-hidden="true">
-          <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
+          <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
             <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2"/>
             <line x1="12" y1="28" x2="28" y2="12" stroke="currentColor" stroke-width="2"/>
           </svg>
@@ -85,15 +156,29 @@
           <div class="brand-sub">private kernel</div>
         </div>
       </div>
+
       <nav class="nav">
         <button class="nav-item active" data-view="dashboard">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/>
+            <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/>
+            <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/>
+            <rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/>
+          </svg>
           Trading Tracker
         </button>
-        <button class="nav-item" data-view="settings">Kernel</button>
+        <button class="nav-item" data-view="settings">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+          Kernel
+        </button>
       </nav>
+
       <div class="sidebar-foot">
         <span class="kernel-dot"></span>
-        Notion linked
+        <span id="sidebar-notion-label">Notion linked</span>
       </div>
     </aside>
 
@@ -103,16 +188,23 @@
         <div class="topbar-actions">
           <span class="sync-status" id="sync-status">Not synced</span>
           <button class="btn" id="btn-sync" title="Pull latest from Notion">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+              <path d="M14 8A6 6 0 112 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              <path d="M14 4v4h-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
             <span id="sync-spinner" class="spinner hidden"></span>
             Sync
           </button>
-          <button class="btn btn-primary" id="btn-new-trade">New trade</button>
+          <button class="btn btn-primary" id="btn-new-trade">+ New trade</button>
         </div>
       </header>
 
+      <div id="sync-error-bar" class="sync-error-bar hidden"></div>
+
       <div class="content">
+        <!-- Dashboard -->
         <section id="view-dashboard">
-          <div class="stats-row" id="stats-row">
+          <div class="stats-row">
             <div class="stat-card">
               <div class="label">Total P&amp;L</div>
               <div class="value" id="stat-pnl">—</div>
@@ -134,6 +226,9 @@
           <div class="trades-panel">
             <div class="trades-toolbar">
               <span id="trades-count-label">0 trades</span>
+              <div class="toolbar-right">
+                <input type="text" id="trades-search" class="search-input" placeholder="Filter by pair, result…" />
+              </div>
             </div>
             <div class="trades-table-wrap">
               <table class="trades">
@@ -159,28 +254,40 @@
           </div>
         </section>
 
+        <!-- Settings / Kernel -->
         <section id="view-settings" class="hidden settings-section">
-          <p class="settings-lead">Kernel credentials are stored locally. Never committed.</p>
+          <p class="settings-lead">Credentials are stored locally and never committed.</p>
           <div id="settings-error" class="error-banner hidden"></div>
-          <form id="settings-form">
-            <div class="form-group">
-              <label for="settings-token">Integration token</label>
-              <input id="settings-token" type="password" placeholder="Leave blank to keep current" autocomplete="off" />
-            </div>
-            <div class="form-group">
-              <label for="settings-database">Database ID</label>
-              <input id="settings-database" type="text" autocomplete="off" />
-            </div>
-            <button type="submit" class="btn btn-primary">Save</button>
-          </form>
+          <div id="settings-success" class="success-banner hidden"></div>
+          <div class="form-group">
+            <label for="settings-token">Integration token</label>
+            <input id="settings-token" type="password" placeholder="Leave blank to keep current" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label for="settings-database">Database ID or URL</label>
+            <input id="settings-database" type="text" autocomplete="off" />
+          </div>
+          <div style="display:flex;gap:8px;margin-top:4px;">
+            <button type="button" class="btn btn-primary" id="btn-settings-save">Save</button>
+            <button type="button" class="btn" id="btn-settings-test">Test connection</button>
+            <button type="button" class="btn btn-ghost" id="btn-disconnect">Disconnect</button>
+          </div>
         </section>
       </div>
     </div>
   </div>
 
+  <!-- ===== TRADE MODAL ===== -->
   <div id="trade-modal" class="modal-backdrop hidden">
     <div class="modal" role="dialog" aria-labelledby="modal-title">
-      <h3 id="modal-title">New trade</h3>
+      <div class="modal-header">
+        <h3 id="modal-title">New trade</h3>
+        <button type="button" class="modal-close" id="btn-modal-close" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
       <div id="trade-error" class="error-banner hidden"></div>
       <form id="trade-form">
         <input type="hidden" id="trade-id" />
@@ -243,6 +350,14 @@
         </div>
       </form>
     </div>
+  </div>
+
+  <!-- Shortcut hints -->
+  <div class="shortcut-hint" id="shortcut-hint">
+    <span><kbd>N</kbd> new trade</span>
+    <span><kbd>R</kbd> sync</span>
+    <span><kbd>/</kbd> search</span>
+    <span><kbd>Esc</kbd> close</span>
   </div>
 
   <script src="js/app.js"></script>

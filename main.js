@@ -42,11 +42,21 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
+// Normalize database ID: strip dashes and then reformat, or accept raw UUID
+function normalizeDatabaseId(raw) {
+  if (!raw) return '';
+  // If it's a full Notion URL, extract the ID
+  const urlMatch = raw.match(/([a-f0-9]{32})/i);
+  if (urlMatch) return urlMatch[1].replace(/-/g, '');
+  // Strip dashes and spaces
+  return raw.replace(/[-\s]/g, '');
+}
+
 function requireNotion() {
   const config = getConfig();
   const client = getNotionClient(config.notionToken);
   if (!client || !config.databaseId) {
-    throw new Error('Notion kernel is not configured. Complete setup in Settings.');
+    throw new Error('Notion is not configured. Complete setup first.');
   }
   return { client, databaseId: config.databaseId };
 }
@@ -58,8 +68,25 @@ ipcMain.handle('config:get', () => ({
 }));
 
 ipcMain.handle('config:set', (_e, payload) => {
+  if (payload.databaseId) {
+    payload.databaseId = normalizeDatabaseId(payload.databaseId);
+  }
   resetNotionClient();
   return setConfig(payload);
+});
+
+// ---- IPC: test connection ------------------------------------------------
+ipcMain.handle('notion:test', async (_e, { notionToken, databaseId }) => {
+  const normalizedId = normalizeDatabaseId(databaseId);
+  const { Client } = require('@notionhq/client');
+  const testClient = new Client({ auth: notionToken });
+  try {
+    const db = await testClient.databases.retrieve({ database_id: normalizedId });
+    return { ok: true, title: db.title?.[0]?.plain_text || 'Untitled Database' };
+  } catch (err) {
+    const msg = err?.body ? JSON.parse(err.body)?.message : err.message;
+    throw new Error(msg || 'Could not connect. Check your token and database ID.');
+  }
 });
 
 // ---- IPC: cached trades (instant load) -----------------------------------
@@ -72,16 +99,28 @@ ipcMain.handle('trades:sync', async () => {
   const trades = [];
   let cursor = undefined;
 
-  do {
-    const response = await client.databases.query({
-      database_id: databaseId,
-      start_cursor: cursor,
-      page_size: 100,
-      sorts: [{ property: 'Date', direction: 'descending' }],
-    });
-    response.results.forEach((page) => trades.push(notionPageToTrade(page)));
-    cursor = response.has_more ? response.next_cursor : undefined;
-  } while (cursor);
+  try {
+    do {
+      const response = await client.databases.query({
+        database_id: databaseId,
+        start_cursor: cursor,
+        page_size: 100,
+        sorts: [{ property: 'Date', direction: 'descending' }],
+      });
+      response.results.forEach((page) => {
+        try {
+          trades.push(notionPageToTrade(page));
+        } catch (e) {
+          console.warn('Skipped page due to parse error:', page.id, e.message);
+        }
+      });
+      cursor = response.has_more ? response.next_cursor : undefined;
+    } while (cursor);
+  } catch (err) {
+    const body = err?.body ? JSON.parse(err.body) : null;
+    const msg = body?.message || err.message || 'Sync failed';
+    throw new Error(`Notion sync error: ${msg}`);
+  }
 
   setCachedTrades(trades);
   const lastSyncedAt = new Date().toISOString();

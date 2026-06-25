@@ -1,10 +1,10 @@
 // Maps between Polymind trade objects and the Notion "Trading Tracker" database.
 // Schema: Name (title), Date (date), Pair (select), Direction (select),
-// Entry Price / Exit Price / P&L / R:R (number), Result (select), Notes (text)
+// Entry Price / Exit Price / P&L / R:R (number), Result (select), Notes (rich_text)
 
 function tradeToNotionProperties(trade) {
   const props = {
-    Name: { title: [{ text: { content: trade.name || `${trade.pair} ${trade.date}` } }] },
+    Name: { title: [{ text: { content: trade.name || `${trade.pair} ${trade.date || ''}`.trim() } }] },
     Date: trade.date ? { date: { start: trade.date } } : undefined,
     Pair: trade.pair ? { select: { name: trade.pair } } : undefined,
     Direction: trade.direction ? { select: { name: trade.direction } } : undefined,
@@ -20,15 +20,24 @@ function tradeToNotionProperties(trade) {
     Notes: trade.notes ? { rich_text: [{ text: { content: trade.notes } }] } : undefined,
   };
 
-  Object.keys(props).forEach((key) => props[key] === undefined && delete props[key]);
+  // Remove undefined entries
+  for (const key of Object.keys(props)) {
+    if (props[key] === undefined) delete props[key];
+  }
+
   return props;
 }
 
 function notionPageToTrade(page) {
-  const p = page.properties;
+  const p = page.properties || {};
+
+  function getText(prop) {
+    return prop?.title?.[0]?.plain_text || prop?.rich_text?.map((t) => t.plain_text).join('') || '';
+  }
+
   return {
     id: page.id,
-    name: p.Name?.title?.[0]?.plain_text || '',
+    name: getText(p.Name),
     date: p.Date?.date?.start || null,
     pair: p.Pair?.select?.name || '',
     direction: p.Direction?.select?.name || '',
