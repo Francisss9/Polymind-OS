@@ -158,15 +158,23 @@
       </div>
 
       <nav class="nav">
+        <div class="nav-label">Workspace</div>
+        <button class="nav-item" data-view="home">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M2 6.5L8 2l6 4.5V14H10v-3H6v3H2V6.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+          </svg>
+          WorkStation
+        </button>
+
+        <div class="nav-label" style="margin-top:10px">Modules</div>
         <button class="nav-item active" data-view="dashboard">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/>
-            <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/>
-            <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/>
-            <rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
           </svg>
           Trading Tracker
         </button>
+
+        <div class="nav-label" style="margin-top:10px">System</div>
         <button class="nav-item" data-view="settings">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
             <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.2"/>
@@ -202,6 +210,192 @@
       <div id="sync-error-bar" class="sync-error-bar hidden"></div>
 
       <div class="content">
+        <!-- Home / WorkStation -->
+        <section id="view-home" class="hidden view-home">
+          <div class="home-grid">
+
+            <!-- LEFT COL -->
+            <div class="home-col">
+
+              <!-- Clock + greeting -->
+              <div class="home-widget widget-clock-card">
+                <div class="clock-greeting" id="home-greeting">Good morning, Francis</div>
+                <div class="clock-time" id="home-clock">00:00</div>
+                <div class="clock-date" id="home-date">Thu Jun 25</div>
+                <div class="clock-quote">"Sow a thought, reap an action; sow an action, reap a habit; sow a habit, reap a character; sow a character, reap a destiny."</div>
+              </div>
+
+              <!-- Notes -->
+              <div class="home-widget">
+                <div class="widget-header">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 2h10v12H3zM6 6h4M6 9h4M6 12h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  <span class="widget-label">NOTES</span>
+                </div>
+                <textarea id="home-notes" class="home-notes-area" placeholder="Quick notes…" spellcheck="false"></textarea>
+              </div>
+
+              <!-- Skills -->
+              <div class="home-widget">
+                <div class="widget-header">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+                  <span class="widget-label">SKILLS IN 2026</span>
+                </div>
+                <ul class="widget-list">
+                  <li>Knowledge (books / podcasts / courses)</li>
+                  <li>Finance (books / podcasts / studies)</li>
+                  <li>Cooking (videos / family / research)</li>
+                  <li>Cyber-security (github / books / videos / research / AI)</li>
+                  <li>Trading (TJR / journaling / discipline / consistency)</li>
+                  <li>Health (longevity / bio-hacking / books / podcasts / research)</li>
+                </ul>
+              </div>
+
+            </div>
+
+            <!-- MIDDLE COL -->
+            <div class="home-col">
+
+              <!-- Habit Tracker -->
+              <div class="home-widget">
+                <div class="widget-header">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="widget-label">TRACKER</span>
+                  <span class="widget-date" id="tracker-date"></span>
+                </div>
+                <div id="habit-tracker-list" class="habit-list"></div>
+                <button class="widget-add-btn" id="btn-add-habit">+ Add habit</button>
+              </div>
+
+              <!-- Quick Links -->
+              <div class="home-widget">
+                <div class="widget-header">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M6 9a3 3 0 004.24 0l2-2a3 3 0 00-4.24-4.24l-1 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M10 7a3 3 0 00-4.24 0l-2 2a3 3 0 004.24 4.24l1-1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  <span class="widget-label">LINKS</span>
+                </div>
+                <div class="links-grid">
+                  <a class="link-chip" href="https://youtube.com" data-external>▶ Youtube</a>
+                  <a class="link-chip" href="https://pinterest.com" data-external>📌 Pinterest</a>
+                  <a class="link-chip" href="https://google.com" data-external>G Google</a>
+                  <a class="link-chip" href="https://xstation5.xtb.com/?branch=pt#/real/loggedIn" data-external>📈 XTB</a>
+                  <a class="link-chip" href="https://notion.so" data-external>N Notion</a>
+                  <a class="link-chip" href="https://github.com/Francisss9" data-external>&lt;/&gt; GitHub</a>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- RIGHT COL -->
+            <div class="home-col">
+
+              <!-- 2026 Goals -->
+              <div class="home-widget">
+                <div class="widget-header">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  <span class="widget-label">2026 GOALS</span>
+                </div>
+                <ul class="widget-list goals-list" id="goals-list">
+                  <li>Be consistent and disciplined</li>
+                  <li>Get on a better shape &amp; look ( &lt;10% body-fat )</li>
+                  <li>Be honest with myself and others</li>
+                  <li>Develop a better relationship with God</li>
+                  <li>Pass all exams in college 1-year (1 not passed yet)</li>
+                  <li>Reach 300-day clean</li>
+                  <li>Reach 1000€ in trading (long-term plans and day-trading)</li>
+                  <li>Reach 12000€ net worth</li>
+                  <li>Have a ≥15% ROI (in investments)</li>
+                </ul>
+              </div>
+
+              <!-- Q3 Objectives -->
+              <div class="home-widget">
+                <div class="widget-header">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2 12h3V6H2zM6.5 12h3V3h-3zM11 12h3V8h-3z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+                  <span class="widget-label">Q3 OBJECTIVES</span>
+                </div>
+                <div class="objectives-list" id="objectives-list">
+                  <div class="objective-item">
+                    <div class="obj-check checked">
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <span>200€ Trading</span>
+                  </div>
+                  <div class="objective-item">
+                    <div class="obj-check">
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <span>Read 1 book</span>
+                  </div>
+                  <div class="objective-item">
+                    <div class="obj-check">
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <span>Progress in projects</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Saving Goals -->
+              <div class="home-widget">
+                <div class="widget-header">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2 10c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M10 10H8V8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 10h12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  <span class="widget-label">SAVING GOALS</span>
+                </div>
+                <div class="saving-goals-list" id="saving-goals-list">
+                  <div class="saving-item">
+                    <div class="saving-top">
+                      <span class="saving-name">📱 Telemóvel</span>
+                      <span class="saving-pct">93%</span>
+                    </div>
+                    <div class="saving-bar-wrap"><div class="saving-bar" style="width:93%"></div></div>
+                    <div class="saving-meta">€650 / €700 · Feb 2027</div>
+                  </div>
+                  <div class="saving-item">
+                    <div class="saving-top">
+                      <span class="saving-name">🏦 Bank (at hand)</span>
+                      <span class="saving-pct">19%</span>
+                    </div>
+                    <div class="saving-bar-wrap"><div class="saving-bar" style="width:19%"></div></div>
+                    <div class="saving-meta">€96 / €500 · Feb 2027</div>
+                  </div>
+                  <div class="saving-item">
+                    <div class="saving-top">
+                      <span class="saving-name">🏦 Bank (savings)</span>
+                      <span class="saving-pct">21%</span>
+                    </div>
+                    <div class="saving-bar-wrap"><div class="saving-bar" style="width:21%"></div></div>
+                    <div class="saving-meta">€2,090 / €10,000 · Feb 2028</div>
+                  </div>
+                  <div class="saving-item">
+                    <div class="saving-top">
+                      <span class="saving-name">📈 Trading</span>
+                      <span class="saving-pct">85%</span>
+                    </div>
+                    <div class="saving-bar-wrap"><div class="saving-bar" style="width:85%"></div></div>
+                    <div class="saving-meta">€170 / €200 · Apr 2026</div>
+                  </div>
+                  <div class="saving-item">
+                    <div class="saving-top">
+                      <span class="saving-name">📊 Brokerage</span>
+                      <span class="saving-pct">60%</span>
+                    </div>
+                    <div class="saving-bar-wrap"><div class="saving-bar" style="width:60%"></div></div>
+                    <div class="saving-meta">€600 / €1,000 · Sep 2026</div>
+                  </div>
+                  <div class="saving-item">
+                    <div class="saving-top">
+                      <span class="saving-name">🚗 Dealership</span>
+                      <span class="saving-pct">40%</span>
+                    </div>
+                    <div class="saving-bar-wrap"><div class="saving-bar" style="width:40%"></div></div>
+                    <div class="saving-meta">€6,000 / €15,000 · Feb 2027</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
         <!-- Dashboard -->
         <section id="view-dashboard">
           <!-- Period tabs + period stats -->
@@ -366,6 +560,7 @@
     <span><kbd>Esc</kbd> close</span>
   </div>
 
+  <script src="js/home.js"></script>
   <script src="js/calendar.js"></script>
   <script src="js/app.js"></script>
 </body>

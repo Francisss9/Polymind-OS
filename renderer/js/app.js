@@ -260,8 +260,9 @@ async function syncTrades() {
 // =========================================================
 
 function showView(name) {
-  ['dashboard', 'settings'].forEach((v) => {
+  ['home', 'dashboard', 'settings'].forEach((v) => {
     const el = $(`#view-${v}`);
+    if (!el) return;
     el.classList.toggle('hidden', v !== name);
     if (v === name) {
       el.style.opacity = '0';
@@ -278,8 +279,9 @@ function showView(name) {
     clearBanners($('#settings-error'), $('#settings-success'));
   }
 
+  const titles = { home: 'WorkStation', dashboard: 'Trading Tracker', settings: 'Kernel' };
   $$('.nav-item').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === name));
-  $('#view-title').textContent = name === 'settings' ? 'Kernel' : 'Trading Tracker';
+  $('#view-title').textContent = titles[name] || name;
   currentView = name;
 }
 
@@ -434,7 +436,7 @@ async function handleLogin() {
       showApp();
       await loadCached();
       updateSyncStatus(config.lastSyncedAt);
-      showView('dashboard');
+      showView('home');
     }
   } finally {
     $('#login-spinner').classList.add('hidden');
@@ -469,7 +471,7 @@ async function handleNotionConnect() {
     config = await window.polymind.config.get();
     await new Promise((r) => setTimeout(r, 500));
     showApp();
-    showView('dashboard');
+    showView('home');
     await syncTrades();
   } catch (err) {
     showBanner($('#setup-error'), err.message || 'Connection failed.');
@@ -550,6 +552,15 @@ function bindEvents() {
   $('#btn-sync').addEventListener('click', () => syncTrades());
   $('#btn-new-trade').addEventListener('click', () => openTradeModal());
 
+  // Show/hide trade actions based on view
+  const tradeActions = document.querySelector('.topbar-trade-actions');
+  if (tradeActions) {
+    const observer = new MutationObserver(() => {
+      const show = currentView === 'dashboard';
+      tradeActions.style.display = show ? 'flex' : 'none';
+    });
+  }
+
   // Modal
   $('#btn-modal-cancel').addEventListener('click', closeTradeModal);
   $('#btn-modal-close').addEventListener('click', closeTradeModal);
@@ -587,10 +598,19 @@ async function init() {
     artBg.style.backgroundImage = "url('assets/login-bg.jpg')";
   }
 
+  if (typeof initHome === 'function') initHome();
   bindEvents();
   config = await window.polymind.config.get();
   updateSyncStatus(config.lastSyncedAt);
-  showGate('login');
+
+  // Auto-bypass login if already authenticated and Notion is set up
+  if (!isFirstRun() && config.setupComplete && config.notionToken && config.databaseId) {
+    showApp();
+    await loadCached();
+    showView('home');
+  } else {
+    showGate('login');
+  }
 }
 
 init();
