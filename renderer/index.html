@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>Polymind OS</title>
+  <link rel="stylesheet" href="styles/app.css" />
+</head>
+<body>
+  <!-- Private gate — connect Notion kernel before entering -->
+  <div id="gate" class="gate hidden">
+    <div class="gate-frame">
+      <div class="gate-left">
+        <div class="gate-logo" aria-hidden="true">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="12" y1="28" x2="28" y2="12" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </div>
+
+        <div id="setup-error" class="error-banner hidden"></div>
+
+        <form id="setup-form" class="gate-form">
+          <div class="field">
+            <label for="setup-token">Integration token</label>
+            <div class="input-wrap">
+              <svg class="field-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M5 7V5a3 3 0 016 0v2M4 7h8v6H4V7z" stroke="currentColor" stroke-width="1.2"/>
+              </svg>
+              <input id="setup-token" type="password" placeholder="secret_..." autocomplete="off" required />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="setup-database">Database ID</label>
+            <div class="input-wrap">
+              <svg class="field-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <rect x="2" y="3" width="12" height="10" rx="1" stroke="currentColor" stroke-width="1.2"/>
+                <path d="M2 6h12M5 3V2M11 3V2" stroke="currentColor" stroke-width="1.2"/>
+              </svg>
+              <input id="setup-database" type="text" placeholder="Trading Tracker kernel" autocomplete="off" required />
+            </div>
+          </div>
+
+          <button type="submit" class="btn-connect">
+            <span id="connect-spinner" class="spinner hidden"></span>
+            Connect
+          </button>
+        </form>
+
+        <p class="gate-foot">
+          Don't have an integration?
+          <button type="button" class="link-btn" id="btn-create-integration">Create one</button>
+        </p>
+
+        <div class="gate-divider"><span>or</span></div>
+
+        <button type="button" class="btn-outline" id="btn-open-notion">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1zm1 2v8h8V4H4z"/>
+          </svg>
+          Open Notion integrations
+        </button>
+      </div>
+
+      <div class="gate-right">
+        <img src="assets/columns.svg" alt="" class="gate-art" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Main shell — visible after kernel is connected -->
+  <div id="app-shell" class="hidden">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2"/>
+            <line x1="12" y1="28" x2="28" y2="12" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">Polymind</div>
+          <div class="brand-sub">private kernel</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="dashboard">
+          Trading Tracker
+        </button>
+        <button class="nav-item" data-view="settings">Kernel</button>
+      </nav>
+      <div class="sidebar-foot">
+        <span class="kernel-dot"></span>
+        Notion linked
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <h1 id="view-title">Trading Tracker</h1>
+        <div class="topbar-actions">
+          <span class="sync-status" id="sync-status">Not synced</span>
+          <button class="btn" id="btn-sync" title="Pull latest from Notion">
+            <span id="sync-spinner" class="spinner hidden"></span>
+            Sync
+          </button>
+          <button class="btn btn-primary" id="btn-new-trade">New trade</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <section id="view-dashboard">
+          <div class="stats-row" id="stats-row">
+            <div class="stat-card">
+              <div class="label">Total P&amp;L</div>
+              <div class="value" id="stat-pnl">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="label">Win rate</div>
+              <div class="value" id="stat-winrate">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="label">Trades</div>
+              <div class="value" id="stat-count">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="label">Avg R:R</div>
+              <div class="value" id="stat-rr">—</div>
+            </div>
+          </div>
+
+          <div class="trades-panel">
+            <div class="trades-toolbar">
+              <span id="trades-count-label">0 trades</span>
+            </div>
+            <div class="trades-table-wrap">
+              <table class="trades">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Pair</th>
+                    <th>Direction</th>
+                    <th>Entry</th>
+                    <th>Exit</th>
+                    <th>P&amp;L</th>
+                    <th>R:R</th>
+                    <th>Result</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="trades-body"></tbody>
+              </table>
+              <div id="trades-empty" class="empty-state hidden">
+                No trades yet. Sync from Notion or log your first trade.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-settings" class="hidden settings-section">
+          <p class="settings-lead">Kernel credentials are stored locally. Never committed.</p>
+          <div id="settings-error" class="error-banner hidden"></div>
+          <form id="settings-form">
+            <div class="form-group">
+              <label for="settings-token">Integration token</label>
+              <input id="settings-token" type="password" placeholder="Leave blank to keep current" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label for="settings-database">Database ID</label>
+              <input id="settings-database" type="text" autocomplete="off" />
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </form>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div id="trade-modal" class="modal-backdrop hidden">
+    <div class="modal" role="dialog" aria-labelledby="modal-title">
+      <h3 id="modal-title">New trade</h3>
+      <div id="trade-error" class="error-banner hidden"></div>
+      <form id="trade-form">
+        <input type="hidden" id="trade-id" />
+        <div class="form-row">
+          <div class="form-group">
+            <label for="trade-date">Date</label>
+            <input id="trade-date" type="date" required />
+          </div>
+          <div class="form-group">
+            <label for="trade-pair">Pair</label>
+            <input id="trade-pair" type="text" placeholder="EUR/USD" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="trade-direction">Direction</label>
+            <select id="trade-direction" required>
+              <option value="">Select…</option>
+              <option value="Long">Long</option>
+              <option value="Short">Short</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="trade-result">Result</label>
+            <select id="trade-result">
+              <option value="">Auto from P&amp;L</option>
+              <option value="Win">Win</option>
+              <option value="Loss">Loss</option>
+              <option value="Breakeven">Breakeven</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="trade-entry">Entry price</label>
+            <input id="trade-entry" type="number" step="any" />
+          </div>
+          <div class="form-group">
+            <label for="trade-exit">Exit price</label>
+            <input id="trade-exit" type="number" step="any" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="trade-pnl">P&amp;L</label>
+            <input id="trade-pnl" type="number" step="any" required />
+          </div>
+          <div class="form-group">
+            <label for="trade-rr">R:R</label>
+            <input id="trade-rr" type="number" step="any" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="trade-notes">Notes</label>
+          <textarea id="trade-notes" placeholder="Setup, lessons learned…"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="btn-modal-cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-modal-save">Save to Notion</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

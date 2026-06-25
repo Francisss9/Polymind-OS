@@ -1,0 +1,11 @@
+node_modules/
+dist/
+out/
+*.log
+.DS_Store
+Thumbs.db
+
+# Never commit Notion tokens or local overrides
+config.local.js
+.env
+.env.*
