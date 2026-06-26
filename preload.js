@@ -15,5 +15,16 @@ contextBridge.exposeInMainWorld('polymind', {
     update: (trade) => ipcRenderer.invoke('trades:update', trade),
     delete: (id) => ipcRenderer.invoke('trades:delete', id),
   },
+  habits: {
+    getCached: () => ipcRenderer.invoke('habits:getCached'),
+    sync: () => ipcRenderer.invoke('habits:sync'),
+    updateCheckbox: (pageId, habitName, checked) =>
+      ipcRenderer.invoke('habits:updateCheckbox', { pageId, habitName, checked }),
+  },
+  goals: {
+    getCached: () => ipcRenderer.invoke('goals:getCached'),
+    sync: () => ipcRenderer.invoke('goals:sync'),
+    update: (id, saved, earned) => ipcRenderer.invoke('goals:update', { id, saved, earned }),
+  },
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
 });

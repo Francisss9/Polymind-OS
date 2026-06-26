@@ -275,6 +275,8 @@ function showView(name) {
 
   if (name === 'settings') {
     $('#settings-database').value = config.databaseId || '';
+    $('#settings-habits-db').value = config.habitsDbId || '';
+    $('#settings-goals-db').value = config.goalsDbId || '';
     $('#settings-token').value = '';
     clearBanners($('#settings-error'), $('#settings-success'));
   }
@@ -488,7 +490,11 @@ async function handleNotionConnect() {
 
 async function handleSettingsSave() {
   clearBanners($('#settings-error'), $('#settings-success'));
-  const payload = { databaseId: $('#settings-database').value.trim() };
+  const payload = {
+    databaseId: $('#settings-database').value.trim(),
+    habitsDbId: $('#settings-habits-db').value.trim(),
+    goalsDbId: $('#settings-goals-db').value.trim(),
+  };
   const token = $('#settings-token').value.trim();
   if (token) payload.notionToken = token;
   try {

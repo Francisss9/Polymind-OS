@@ -5,43 +5,33 @@
 // =========================================================
 
 const HOME_STORAGE_KEY = 'polymind_home';
+const HABIT_PROPS = [
+  'Wake up 7 a.m.', 'GM', 'Read', 'Trading', 'Journal',
+  'Gym', '3L Hydration', 'Shower', 'Study/Work', 'Nutrition', 'God',
+];
+
+// Local state
+let habitEntries = [];      // from Notion cache
+let savingGoals = [];       // from Notion cache
+let habitPeriod = 'daily';  // daily | weekly | monthly
+let habitSyncing = false;
+let goalSyncing = false;
 
 let homeData = {
   notes: '',
-  habits: [
-    { id: 1, name: 'Sleep', checked: false },
-    { id: 2, name: 'GM', checked: false },
-    { id: 3, name: 'Read', checked: false },
-    { id: 4, name: 'Trading', checked: false },
-    { id: 5, name: 'Journal', checked: false },
-    { id: 6, name: 'Gym / Running', checked: false },
-    { id: 7, name: 'Hydration', checked: false },
-    { id: 8, name: 'Shower', checked: false },
-    { id: 9, name: 'Study/Work', checked: false },
-    { id: 10, name: 'Nutrition', checked: false },
-    { id: 11, name: 'Pray', checked: false },
-  ],
   objectives: [
     { id: 1, name: '200€ Trading', checked: true },
     { id: 2, name: 'Read 1 book', checked: false },
     { id: 3, name: 'Progress in projects', checked: false },
   ],
-  lastHabitDate: '',
 };
+
+// ---- Persistence (non-Notion data) ----
 
 function loadHomeData() {
   try {
     const saved = JSON.parse(localStorage.getItem(HOME_STORAGE_KEY));
-    if (saved) {
-      homeData = { ...homeData, ...saved };
-      // Reset habits if it's a new day
-      const today = new Date().toISOString().slice(0, 10);
-      if (homeData.lastHabitDate !== today) {
-        homeData.habits = homeData.habits.map(h => ({ ...h, checked: false }));
-        homeData.lastHabitDate = today;
-        saveHomeData();
-      }
-    }
+    if (saved) homeData = { ...homeData, ...saved };
   } catch {}
 }
 
@@ -59,67 +49,309 @@ function updateClock() {
   if (clockEl) clockEl.textContent = `${h}:${m}`;
 
   const dateEl = document.getElementById('home-date');
-  if (dateEl) {
-    dateEl.textContent = now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-  }
+  if (dateEl) dateEl.textContent = now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 
   const greetEl = document.getElementById('home-greeting');
   if (greetEl) {
-    const hour = now.getHours();
-    const period = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
-    greetEl.textContent = `Good ${period}, Francis`;
-  }
-
-  const trackerDate = document.getElementById('tracker-date');
-  if (trackerDate) {
-    trackerDate.textContent = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
+    const hr = now.getHours();
+    greetEl.textContent = `Good ${hr < 12 ? 'morning' : hr < 18 ? 'afternoon' : 'evening'}, Francis`;
   }
 }
 
-// ---- Habits ----
+// =========================================================
+// HABITS — Notion synced
+// =========================================================
 
-function renderHabits() {
+function todayISO() { return new Date().toISOString().slice(0, 10); }
+
+function getWeekRange() {
+  const today = new Date();
+  const day = today.getDay();
+  const mon = new Date(today);
+  mon.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  return { start: mon.toISOString().slice(0,10), end: sun.toISOString().slice(0,10) };
+}
+
+function getMonthRange() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
+  const end = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().slice(0,10);
+  return { start, end };
+}
+
+function habitProgress(entry) {
+  if (entry.progress !== null && entry.progress !== undefined) return entry.progress;
+  const done = HABIT_PROPS.filter(p => entry[p]).length;
+  return Math.round((done / HABIT_PROPS.length) * 100);
+}
+
+async function loadCachedHabits() {
+  try {
+    const { entries } = await window.polymind.habits.getCached();
+    habitEntries = entries || [];
+    renderHabitTracker();
+    updateHabitSyncLabel();
+  } catch(e) { console.warn('habits cache', e); }
+}
+
+async function syncHabits() {
+  if (habitSyncing) return;
+  habitSyncing = true;
+  setHabitSyncState(true);
+  try {
+    const { entries, lastSyncedAt } = await window.polymind.habits.sync();
+    habitEntries = entries || [];
+    renderHabitTracker();
+    updateHabitSyncLabel(lastSyncedAt);
+  } catch(e) {
+    console.error('habits sync failed', e);
+    const lbl = document.getElementById('habit-sync-status');
+    if (lbl) lbl.textContent = e.message?.includes('not configured') ? '⚠ Set Habits DB in Kernel' : 'Sync failed';
+  } finally {
+    habitSyncing = false;
+    setHabitSyncState(false);
+  }
+}
+
+function setHabitSyncState(active) {
+  const btn = document.getElementById('btn-habit-sync');
+  if (btn) btn.disabled = active;
+  const lbl = document.getElementById('habit-sync-status');
+  if (lbl && active) lbl.textContent = 'Syncing…';
+}
+
+function updateHabitSyncLabel(ts) {
+  const el = document.getElementById('habit-sync-status');
+  if (!el) return;
+  if (!ts) { el.textContent = ''; return; }
+  const d = new Date(ts);
+  el.textContent = `Synced ${d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}`;
+}
+
+// ---- Toggle a checkbox and write to Notion ----
+
+async function toggleHabitCheckbox(pageId, habitName, currentValue) {
+  const newValue = !currentValue;
+
+  // Optimistic update
+  const entry = habitEntries.find(e => e.id === pageId);
+  if (entry) { entry[habitName] = newValue; renderHabitTracker(); }
+
+  try {
+    await window.polymind.habits.updateCheckbox(pageId, habitName, newValue);
+    // Re-read cache for updated progress
+    const { entries } = await window.polymind.habits.getCached();
+    habitEntries = entries || [];
+    renderHabitTracker();
+  } catch(e) {
+    // Revert on failure
+    if (entry) { entry[habitName] = currentValue; renderHabitTracker(); }
+    console.error('habit update failed', e);
+  }
+}
+
+// ---- Render ----
+
+function renderHabitTracker() {
+  const today = todayISO();
+
+  if (habitPeriod === 'daily') renderHabitDaily(today);
+  else if (habitPeriod === 'weekly') renderHabitWeekly();
+  else if (habitPeriod === 'monthly') renderHabitMonthly();
+}
+
+function habitCheckboxHtml(pageId, name, checked) {
+  return `<div class="habit-checkbox ${checked ? 'checked' : ''}"
+    data-page="${pageId}" data-habit="${name}" data-checked="${checked}">
+    <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+      <path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>`;
+}
+
+function renderHabitDaily(dateStr) {
   const list = document.getElementById('habit-tracker-list');
   if (!list) return;
-  list.innerHTML = homeData.habits.map(h => `
-    <div class="habit-row" data-id="${h.id}">
-      <div class="habit-checkbox ${h.checked ? 'checked' : ''}" data-habit="${h.id}">
-        <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-          <path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <span class="habit-name">${h.name}</span>
-      <button class="habit-del" data-del="${h.id}" title="Remove">×</button>
+
+  const entry = habitEntries.find(e => e.date === dateStr);
+
+  if (!entry) {
+    list.innerHTML = `<div class="habit-empty">No entry for today in Notion.<br>
+      <small>Sync or create today's row in your Tracker database.</small></div>`;
+    return;
+  }
+
+  const pct = habitProgress(entry);
+  list.innerHTML = `
+    <div class="habit-progress-bar-wrap">
+      <div class="habit-progress-bar" style="width:${pct}%"></div>
+      <span class="habit-progress-label">${pct}%</span>
     </div>
-  `).join('');
+    ${HABIT_PROPS.map(name => `
+      <div class="habit-row">
+        ${habitCheckboxHtml(entry.id, name, entry[name])}
+        <span class="habit-name">${name}</span>
+      </div>
+    `).join('')}`;
 
-  list.querySelectorAll('.habit-checkbox').forEach(el => {
+  bindHabitCheckboxes(list);
+}
+
+function renderHabitWeekly() {
+  const list = document.getElementById('habit-tracker-list');
+  if (!list) return;
+  const { start, end } = getWeekRange();
+  const week = habitEntries.filter(e => e.date >= start && e.date <= end)
+    .sort((a,b) => a.date.localeCompare(b.date));
+
+  if (!week.length) {
+    list.innerHTML = '<div class="habit-empty">No entries this week.</div>';
+    return;
+  }
+
+  list.innerHTML = week.map(entry => {
+    const pct = habitProgress(entry);
+    const dayName = new Date(entry.date + 'T12:00:00').toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+    return `
+      <div class="habit-week-row">
+        <div class="habit-week-header" data-toggle="${entry.id}">
+          <span class="habit-week-day">${dayName}</span>
+          <div class="habit-week-bar-wrap">
+            <div class="habit-week-bar" style="width:${pct}%"></div>
+          </div>
+          <span class="habit-week-pct">${pct}%</span>
+          <span class="habit-week-chevron">›</span>
+        </div>
+        <div class="habit-week-detail hidden" id="detail-${entry.id}">
+          ${HABIT_PROPS.map(name => `
+            <div class="habit-row habit-row-sm">
+              ${habitCheckboxHtml(entry.id, name, entry[name])}
+              <span class="habit-name">${name}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  // Toggle expand/collapse
+  list.querySelectorAll('[data-toggle]').forEach(el => {
     el.addEventListener('click', () => {
-      const id = Number(el.dataset.habit);
-      const habit = homeData.habits.find(h => h.id === id);
-      if (habit) { habit.checked = !habit.checked; saveHomeData(); renderHabits(); }
+      const detail = document.getElementById(`detail-${el.dataset.toggle}`);
+      const chevron = el.querySelector('.habit-week-chevron');
+      if (detail) {
+        detail.classList.toggle('hidden');
+        if (chevron) chevron.textContent = detail.classList.contains('hidden') ? '›' : '⌄';
+      }
     });
   });
 
-  list.querySelectorAll('.habit-del').forEach(el => {
-    el.addEventListener('click', () => {
-      const id = Number(el.dataset.del);
-      homeData.habits = homeData.habits.filter(h => h.id !== id);
-      saveHomeData(); renderHabits();
+  bindHabitCheckboxes(list);
+}
+
+function renderHabitMonthly() {
+  const list = document.getElementById('habit-tracker-list');
+  if (!list) return;
+  const { start, end } = getMonthRange();
+  const month = habitEntries.filter(e => e.date >= start && e.date <= end)
+    .sort((a,b) => a.date.localeCompare(b.date));
+
+  if (!month.length) {
+    list.innerHTML = '<div class="habit-empty">No entries this month.</div>';
+    return;
+  }
+
+  list.innerHTML = month.map(entry => {
+    const pct = habitProgress(entry);
+    const dayName = new Date(entry.date + 'T12:00:00').toLocaleDateString('en-GB', { weekday:'short', day:'numeric' });
+    return `
+      <div class="habit-month-row">
+        <span class="habit-month-day">${dayName}</span>
+        <div class="habit-month-bar-wrap">
+          <div class="habit-month-bar" style="width:${pct}%"></div>
+        </div>
+        <span class="habit-month-pct">${pct}%</span>
+      </div>`;
+  }).join('');
+}
+
+function bindHabitCheckboxes(container) {
+  container.querySelectorAll('.habit-checkbox[data-page]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const pageId = el.dataset.page;
+      const habitName = el.dataset.habit;
+      const current = el.dataset.checked === 'true';
+      toggleHabitCheckbox(pageId, habitName, current);
     });
   });
 }
 
-function addHabit() {
-  const name = prompt('Habit name:');
-  if (!name || !name.trim()) return;
-  const id = Date.now();
-  homeData.habits.push({ id, name: name.trim(), checked: false });
-  saveHomeData();
-  renderHabits();
+function initHabitTabs() {
+  document.querySelectorAll('.habit-period-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      habitPeriod = btn.dataset.period;
+      document.querySelectorAll('.habit-period-tab').forEach(b => b.classList.toggle('active', b === btn));
+      renderHabitTracker();
+    });
+  });
 }
 
-// ---- Objectives ----
+// =========================================================
+// SAVING GOALS — Notion synced
+// =========================================================
+
+async function loadCachedGoals() {
+  try {
+    const { goals } = await window.polymind.goals.getCached();
+    savingGoals = goals || [];
+    renderSavingGoals();
+  } catch(e) { console.warn('goals cache', e); }
+}
+
+async function syncGoals() {
+  if (goalSyncing) return;
+  goalSyncing = true;
+  const btn = document.getElementById('btn-goals-sync');
+  if (btn) btn.disabled = true;
+  try {
+    const { goals } = await window.polymind.goals.sync();
+    savingGoals = goals || [];
+    renderSavingGoals();
+  } catch(e) {
+    console.error('goals sync', e);
+    const btn2 = document.getElementById('btn-goals-sync');
+    if (btn2) btn2.title = e.message?.includes('not configured') ? 'Set Goals DB in Kernel settings' : 'Sync failed';
+  } finally {
+    goalSyncing = false;
+    if (btn) btn.disabled = false;
+  }
+}
+
+function renderSavingGoals() {
+  const list = document.getElementById('saving-goals-list');
+  if (!list || !savingGoals.length) return;
+
+  list.innerHTML = savingGoals.map(g => {
+    const pct = g.progress !== null ? Math.round(g.progress * 100) : (g.goal > 0 ? Math.round((g.saved / g.goal) * 100) : 0);
+    const safeP = Math.min(pct, 100);
+    const dateStr = g.targetDate ? new Date(g.targetDate).toLocaleDateString('en-GB', { month:'short', year:'numeric' }) : '';
+    return `
+      <div class="saving-item" data-goal-id="${g.id}">
+        <div class="saving-top">
+          <span class="saving-name">${g.name}</span>
+          <span class="saving-pct">${safeP}%</span>
+        </div>
+        <div class="saving-bar-wrap"><div class="saving-bar" style="width:${safeP}%"></div></div>
+        <div class="saving-meta">€${(g.saved||0).toLocaleString()} / €${(g.goal||0).toLocaleString()}${dateStr ? ' · ' + dateStr : ''}</div>
+      </div>`;
+  }).join('');
+}
+
+// =========================================================
+// OBJECTIVES (local)
+// =========================================================
 
 function renderObjectives() {
   const list = document.getElementById('objectives-list');
@@ -137,51 +369,59 @@ function renderObjectives() {
 
   list.querySelectorAll('.obj-check').forEach(el => {
     el.addEventListener('click', () => {
-      const id = Number(el.dataset.obj);
-      const obj = homeData.objectives.find(o => o.id === id);
+      const obj = homeData.objectives.find(o => o.id === Number(el.dataset.obj));
       if (obj) { obj.checked = !obj.checked; saveHomeData(); renderObjectives(); }
     });
   });
 }
 
-// ---- Notes ----
+// =========================================================
+// NOTES (local)
+// =========================================================
 
 function initNotes() {
   const el = document.getElementById('home-notes');
   if (!el) return;
   el.value = homeData.notes || '';
-  el.addEventListener('input', () => {
-    homeData.notes = el.value;
-    saveHomeData();
-  });
+  el.addEventListener('input', () => { homeData.notes = el.value; saveHomeData(); });
 }
 
-// ---- Links ----
+// =========================================================
+// LINKS
+// =========================================================
 
 function initLinks() {
   document.querySelectorAll('.link-chip[data-external]').forEach(a => {
     a.addEventListener('click', (e) => {
       e.preventDefault();
       const url = a.getAttribute('href');
-      if (url && window.polymind && window.polymind.openExternal) {
-        window.polymind.openExternal(url);
-      }
+      if (url && window.polymind?.openExternal) window.polymind.openExternal(url);
     });
   });
 }
 
-// ---- Init ----
+// =========================================================
+// INIT
+// =========================================================
 
-function initHome() {
+async function initHome() {
   loadHomeData();
   updateClock();
   setInterval(updateClock, 10000);
-  renderHabits();
+
   renderObjectives();
   initNotes();
   initLinks();
+  initHabitTabs();
 
-  const addBtn = document.getElementById('btn-add-habit');
-  if (addBtn) addBtn.addEventListener('click', addHabit);
+  // Sync buttons
+  const habitSyncBtn = document.getElementById('btn-habit-sync');
+  if (habitSyncBtn) habitSyncBtn.addEventListener('click', syncHabits);
+
+  const goalsSyncBtn = document.getElementById('btn-goals-sync');
+  if (goalsSyncBtn) goalsSyncBtn.addEventListener('click', syncGoals);
+
+  // Load from cache first (instant), then sync in background
+  await loadCachedHabits();
+  await loadCachedGoals();
 }
-

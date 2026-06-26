@@ -327,3 +327,178 @@
   color: var(--text-muted);
 }
 
+
+/* ---- Habit period tabs ---- */
+
+.habit-period-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  margin-bottom: 10px;
+}
+
+.habit-period-tab {
+  flex: 1;
+  padding: 4px 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.habit-period-tab.active {
+  background: var(--accent);
+  color: var(--text-inverse);
+  font-weight: 600;
+}
+
+/* ---- Habit progress bar ---- */
+
+.habit-progress-bar-wrap {
+  position: relative;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.habit-progress-bar {
+  height: 100%;
+  background: var(--text);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+.habit-progress-label {
+  position: absolute;
+  right: 0;
+  top: -16px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* ---- Habit empty state ---- */
+
+.habit-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 8px 0;
+  line-height: 1.6;
+}
+.habit-empty small { color: var(--text-faint); font-size: 11px; }
+
+/* ---- Habit row small (inside weekly detail) ---- */
+
+.habit-row-sm {
+  padding: 2px 0;
+}
+
+/* ---- Weekly habit rows ---- */
+
+.habit-week-row {
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 2px;
+}
+.habit-week-row:last-child { border-bottom: none; }
+
+.habit-week-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  cursor: pointer;
+  user-select: none;
+}
+.habit-week-header:hover .habit-week-day { color: var(--text); }
+
+.habit-week-day {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 72px;
+  flex-shrink: 0;
+}
+.habit-week-bar-wrap {
+  flex: 1;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.habit-week-bar {
+  height: 100%;
+  background: var(--text);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.habit-week-pct {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 32px;
+  text-align: right;
+}
+.habit-week-chevron {
+  font-size: 14px;
+  color: var(--text-muted);
+  transition: transform 0.15s;
+}
+
+.habit-week-detail {
+  padding: 4px 0 8px 6px;
+}
+.habit-week-detail.hidden { display: none; }
+
+/* ---- Monthly habit rows ---- */
+
+.habit-month-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.habit-month-row:last-child { border-bottom: none; }
+.habit-month-day {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 52px;
+  flex-shrink: 0;
+}
+.habit-month-bar-wrap {
+  flex: 1;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.habit-month-bar {
+  height: 100%;
+  background: var(--text);
+  border-radius: 2px;
+}
+.habit-month-pct {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* ---- Widget sync button ---- */
+
+.widget-sync-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  transition: color 0.12s, background 0.12s;
+  line-height: 1;
+}
+.widget-sync-btn:hover { color: var(--text); background: var(--bg-hover); }
+.widget-sync-btn:disabled { opacity: 0.4; cursor: not-allowed; }

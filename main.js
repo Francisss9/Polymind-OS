@@ -2,14 +2,14 @@ const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const { getNotionClient, resetNotionClient } = require('./kernel/notion-client');
 const {
-  getConfig,
-  setConfig,
-  getCachedTrades,
-  setCachedTrades,
-  getLastSyncedAt,
-  setLastSyncedAt,
+  getConfig, setConfig,
+  getCachedTrades, setCachedTrades, getLastSyncedAt, setLastSyncedAt,
+  getCachedHabits, setCachedHabits, getHabitsLastSyncedAt, setHabitsLastSyncedAt,
+  getCachedGoals, setCachedGoals, getGoalsLastSyncedAt, setGoalsLastSyncedAt,
 } = require('./kernel/store');
 const { tradeToNotionProperties, notionPageToTrade } = require('./modules/trading-tracker/schema');
+const { HABIT_PROPS, notionPageToHabitEntry, habitCheckboxPatch } = require('./modules/habits/schema');
+const { notionPageToGoal, goalToNotionProperties } = require('./modules/saving-goals/schema');
 
 let mainWindow;
 
@@ -167,6 +167,119 @@ ipcMain.handle('trades:delete', async (_e, id) => {
 
   setCachedTrades(getCachedTrades().filter((t) => t.id !== id));
   return { ok: true };
+});
+
+
+// ---- IPC: habits:getCached -----------------------------------------------
+ipcMain.handle('habits:getCached', () => ({
+  entries: getCachedHabits(),
+  lastSyncedAt: getHabitsLastSyncedAt(),
+}));
+
+// ---- IPC: habits:sync -------------------------------------------------------
+ipcMain.handle('habits:sync', async () => {
+  const config = getConfig();
+  const HABITS_DB_ID = normalizeDatabaseId(config.habitsDbId || '');
+  if (!HABITS_DB_ID) throw new Error('Habits database ID not configured. Add it in Kernel settings.');
+  const { Client } = require('@notionhq/client');
+  const client = new Client({ auth: config.notionToken });
+
+  const entries = [];
+  let cursor;
+  do {
+    const res = await client.databases.query({
+      database_id: HABITS_DB_ID,
+      start_cursor: cursor,
+      page_size: 100,
+      sorts: [{ property: 'Date', direction: 'descending' }],
+    });
+    res.results.forEach(page => {
+      try { entries.push(notionPageToHabitEntry(page)); } catch(e) {}
+    });
+    cursor = res.has_more ? res.next_cursor : undefined;
+  } while (cursor);
+
+  setCachedHabits(entries);
+  const lastSyncedAt = new Date().toISOString();
+  setHabitsLastSyncedAt(lastSyncedAt);
+  return { entries, lastSyncedAt };
+});
+
+// ---- IPC: habits:updateCheckbox --------------------------------------------
+ipcMain.handle('habits:updateCheckbox', async (_e, { pageId, habitName, checked }) => {
+  const config = getConfig();
+  const { Client } = require('@notionhq/client');
+  const client = new Client({ auth: config.notionToken });
+
+  await client.pages.update({
+    page_id: pageId,
+    properties: habitCheckboxPatch(habitName, checked),
+  });
+
+  // Update local cache
+  const cached = getCachedHabits();
+  const entry = cached.find(e => e.id === pageId);
+  if (entry) {
+    entry[habitName] = checked;
+    // Recalculate progress
+    const total = HABIT_PROPS.length;
+    const done = HABIT_PROPS.filter(p => entry[p]).length;
+    entry.progress = Math.round((done / total) * 100);
+    setCachedHabits(cached);
+  }
+
+  return { ok: true };
+});
+
+// ---- IPC: goals:getCached ---------------------------------------------------
+ipcMain.handle('goals:getCached', () => ({
+  goals: getCachedGoals(),
+  lastSyncedAt: getGoalsLastSyncedAt(),
+}));
+
+// ---- IPC: goals:sync --------------------------------------------------------
+ipcMain.handle('goals:sync', async () => {
+  const config = getConfig();
+  const GOALS_DB_ID = normalizeDatabaseId(config.goalsDbId || '');
+  if (!GOALS_DB_ID) throw new Error('Saving Goals database ID not configured. Add it in Kernel settings.');
+  const { Client } = require('@notionhq/client');
+  const client = new Client({ auth: config.notionToken });
+
+  const goals = [];
+  let cursor;
+  do {
+    const res = await client.databases.query({
+      database_id: GOALS_DB_ID,
+      start_cursor: cursor,
+      page_size: 100,
+    });
+    res.results.forEach(page => {
+      try { goals.push(notionPageToGoal(page)); } catch(e) {}
+    });
+    cursor = res.has_more ? res.next_cursor : undefined;
+  } while (cursor);
+
+  setCachedGoals(goals);
+  const lastSyncedAt = new Date().toISOString();
+  setGoalsLastSyncedAt(lastSyncedAt);
+  return { goals, lastSyncedAt };
+});
+
+// ---- IPC: goals:update ------------------------------------------------------
+ipcMain.handle('goals:update', async (_e, { id, saved, earned }) => {
+  const config = getConfig();
+  const { Client } = require('@notionhq/client');
+  const client = new Client({ auth: config.notionToken });
+
+  const page = await client.pages.update({
+    page_id: id,
+    properties: goalToNotionProperties({ saved, earned }),
+  });
+
+  const updated = notionPageToGoal(page);
+  const cached = getCachedGoals().map(g => g.id === updated.id ? updated : g);
+  setCachedGoals(cached);
+  return updated;
 });
 
 ipcMain.handle('shell:openExternal', (_e, url) => {

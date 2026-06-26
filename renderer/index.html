@@ -265,10 +265,15 @@
                 <div class="widget-header">
                   <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   <span class="widget-label">TRACKER</span>
-                  <span class="widget-date" id="tracker-date"></span>
+                  <span class="widget-date" id="habit-sync-status"></span>
+                  <button class="widget-sync-btn" id="btn-habit-sync" title="Sync habits from Notion">↻</button>
+                </div>
+                <div class="habit-period-tabs">
+                  <button class="habit-period-tab active" data-period="daily">Day</button>
+                  <button class="habit-period-tab" data-period="weekly">Week</button>
+                  <button class="habit-period-tab" data-period="monthly">Month</button>
                 </div>
                 <div id="habit-tracker-list" class="habit-list"></div>
-                <button class="widget-add-btn" id="btn-add-habit">+ Add habit</button>
               </div>
 
               <!-- Quick Links -->
@@ -344,6 +349,7 @@
                 <div class="widget-header">
                   <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2 10c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M10 10H8V8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 10h12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
                   <span class="widget-label">SAVING GOALS</span>
+                  <button class="widget-sync-btn" id="btn-goals-sync" title="Sync goals from Notion">↻</button>
                 </div>
                 <div class="saving-goals-list" id="saving-goals-list">
                   <div class="saving-item">
@@ -469,8 +475,16 @@
             <input id="settings-token" type="password" placeholder="Leave blank to keep current" autocomplete="off" />
           </div>
           <div class="form-group">
-            <label for="settings-database">Database ID or URL</label>
+            <label for="settings-database">Trading Tracker — Database ID or URL</label>
             <input id="settings-database" type="text" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label for="settings-habits-db">Habit Tracker — Database ID or URL</label>
+            <input id="settings-habits-db" type="text" placeholder="Paste ID or full Notion URL" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label for="settings-goals-db">Saving Goals — Database ID or URL</label>
+            <input id="settings-goals-db" type="text" placeholder="Paste ID or full Notion URL" autocomplete="off" />
           </div>
           <div style="display:flex;gap:8px;margin-top:4px;">
             <button type="button" class="btn btn-primary" id="btn-settings-save">Save</button>
