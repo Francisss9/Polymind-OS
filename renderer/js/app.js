@@ -62,11 +62,13 @@ function showGate(step = 'login') {
 function showApp() {
   $('#gate').classList.add('hidden');
   $('#app-shell').classList.remove('hidden');
-  // Animate app shell in
+  // Animate app shell in with slide-up + fade
   $('#app-shell').style.opacity = '0';
+  $('#app-shell').style.transform = 'translateY(10px)';
   requestAnimationFrame(() => {
-    $('#app-shell').style.transition = 'opacity 0.25s ease';
+    $('#app-shell').style.transition = 'opacity 0.35s cubic-bezier(0.22,1,0.36,1), transform 0.35s cubic-bezier(0.22,1,0.36,1)';
     $('#app-shell').style.opacity = '1';
+    $('#app-shell').style.transform = 'translateY(0)';
   });
 }
 
@@ -609,14 +611,8 @@ async function init() {
   config = await window.polymind.config.get();
   updateSyncStatus(config.lastSyncedAt);
 
-  // Auto-bypass login if already authenticated and Notion is set up
-  if (!isFirstRun() && config.setupComplete && config.notionToken && config.databaseId) {
-    showApp();
-    await loadCached();
-    showView('home');
-  } else {
-    showGate('login');
-  }
+  // Always show the login gate — user must authenticate each session
+  showGate('login');
 }
 
 init();
