@@ -9,7 +9,7 @@ let calOffset = 0; // nav offset (e.g. week index, month index, etc.)
 
 // ---- Helpers ----
 
-function isoDate(d) { return d.toISOString().slice(0,10); }
+function isoDate(d) { const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), dy=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${dy}`; }
 
 function startOfWeek(d) {
   const c = new Date(d);
@@ -78,8 +78,8 @@ function getPeriodTrades() {
     const d = new Date(today.getFullYear(), today.getMonth() + calOffset, 1);
     const year = d.getFullYear(), month = d.getMonth();
     return trades.filter(t => {
-      const dt = new Date((t.date||'').slice(0,10));
-      return dt.getFullYear() === year && dt.getMonth() === month;
+      const [dy, dm, dd] = (t.date||'').slice(0,10).split('-').map(Number);
+      return dy === year && (dm - 1) === month;
     });
   }
 
