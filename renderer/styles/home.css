@@ -1,0 +1,329 @@
+/* =========================================================
+   SIDEBAR NAV LABELS
+   ========================================================= */
+
+.nav-label {
+  font-size: 10px;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 0 10px;
+  margin-bottom: 4px;
+  margin-top: 6px;
+  user-select: none;
+}
+
+/* =========================================================
+   HOME / WORKSTATION VIEW
+   ========================================================= */
+
+.view-home {
+  padding: 0 !important;
+  overflow-y: auto;
+}
+
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  padding: 20px 22px;
+  align-items: start;
+}
+
+.home-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---- Widget base ---- */
+
+.home-widget {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+}
+
+.widget-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.widget-label {
+  font-size: 10px;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 500;
+  flex: 1;
+}
+
+.widget-date {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* ---- Clock card ---- */
+
+.widget-clock-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 18px 16px;
+}
+
+.clock-greeting {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.clock-time {
+  font-size: 44px;
+  font-weight: 200;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.clock-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
+.clock-quote {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-style: italic;
+  line-height: 1.6;
+  border-left: 2px solid var(--border);
+  padding-left: 10px;
+}
+
+/* ---- Notes area ---- */
+
+.home-notes-area {
+  width: 100%;
+  min-height: 80px;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+  font-family: var(--font);
+}
+.home-notes-area::placeholder { color: var(--text-faint); }
+
+/* ---- Generic list ---- */
+
+.widget-list {
+  margin: 0;
+  padding: 0 0 0 14px;
+  list-style: disc;
+}
+.widget-list li {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  padding-left: 2px;
+}
+
+/* ---- Habit tracker ---- */
+
+.habit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.habit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.habit-checkbox {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, border-color 0.12s;
+}
+.habit-checkbox.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.habit-checkbox.checked svg { display: block; }
+.habit-checkbox svg { display: none; }
+
+.habit-name {
+  font-size: 12px;
+  color: var(--text-muted);
+  flex: 1;
+}
+.habit-checkbox.checked + .habit-name {
+  color: var(--text);
+}
+
+.habit-del {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.habit-row:hover .habit-del { opacity: 1; }
+
+.widget-add-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.12s;
+}
+.widget-add-btn:hover { color: var(--text); }
+
+/* ---- Links ---- */
+
+.links-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.link-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  cursor: pointer;
+}
+.link-chip:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/* ---- Goals ---- */
+
+.goals-list li {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.8;
+}
+
+/* ---- Objectives ---- */
+
+.objectives-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.objective-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.obj-check {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.obj-check.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.obj-check svg { color: var(--text-inverse); }
+
+.objective-item span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ---- Saving goals ---- */
+
+.saving-goals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.saving-item {}
+
+.saving-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.saving-name {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.saving-pct {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.saving-bar-wrap {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.saving-bar {
+  height: 100%;
+  background: var(--text);
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
+
+.saving-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
