@@ -542,6 +542,11 @@ function setupToggle(btnId, inputId) {
 // =========================================================
 
 function bindEvents() {
+  // Titlebar window controls
+  $('#tb-min')?.addEventListener('click', () => window.polymind.window.minimize());
+  $('#tb-max')?.addEventListener('click', () => window.polymind.window.maximize());
+  $('#tb-close')?.addEventListener('click', () => window.polymind.window.close());
+
   // Gate
   $('#btn-login').addEventListener('click', handleLogin);
   $('#login-email').addEventListener('keydown', (e) => e.key === 'Enter' && $('#login-password').focus());

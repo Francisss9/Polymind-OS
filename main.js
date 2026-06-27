@@ -19,9 +19,11 @@ function createWindow() {
     height: 780,
     minWidth: 760,
     minHeight: 560,
-    backgroundColor: '#0D0E0F',
+    backgroundColor: '#07080a',
     autoHideMenuBar: true,
     title: 'Polymind OS',
+    frame: false,
+    titleBarStyle: 'hidden',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -287,3 +289,8 @@ ipcMain.handle('shell:openExternal', (_e, url) => {
     shell.openExternal(url);
   }
 });
+
+// ---- IPC: window controls ------------------------------------------------
+ipcMain.on('window-minimize', () => mainWindow?.minimize());
+ipcMain.on('window-maximize', () => mainWindow?.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize());
+ipcMain.on('window-close',    () => mainWindow?.close());

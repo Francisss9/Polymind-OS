@@ -1,4 +1,59 @@
 /* =========================================================
+   TITLEBAR — custom frameless window chrome
+   ========================================================= */
+
+.titlebar {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 6px 0 14px;
+  background: var(--void);
+  border-bottom: 1px solid var(--border-subtle);
+  -webkit-app-region: drag;
+  z-index: 9999;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.titlebar-left {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--text-faint);
+  -webkit-app-region: no-drag;
+  pointer-events: none;
+}
+
+.titlebar-name {
+  font-size: 10.5px; font-weight: 500;
+  color: var(--text-faint);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.titlebar-controls {
+  display: flex; gap: 1px;
+  -webkit-app-region: no-drag;
+}
+
+.tb-btn {
+  width: 32px; height: 32px;
+  background: none; border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.12s, color 0.12s;
+  border-radius: 0;
+}
+.tb-btn:hover { background: var(--lifted); color: var(--text); }
+.tb-close:hover { background: rgba(180, 50, 50, 0.3); color: #e07070; }
+
+/* Push all content below the titlebar */
+#gate,
+#app-shell {
+  margin-top: 32px;
+  height: calc(100vh - 32px);
+}
+
+/* =========================================================
    APP SHELL — icon sidebar + topbar
    ========================================================= */
 
