@@ -82,7 +82,6 @@ function getMonthRange() {
 }
 
 function habitProgress(entry) {
-  if (entry.progress !== null && entry.progress !== undefined) return entry.progress;
   const done = HABIT_PROPS.filter(p => entry[p]).length;
   return Math.round((done / HABIT_PROPS.length) * 100);
 }
@@ -135,19 +134,35 @@ function updateHabitSyncLabel(ts) {
 async function toggleHabitCheckbox(pageId, habitName, currentValue) {
   const newValue = !currentValue;
 
-  // Optimistic update
+  // Optimistic DOM patch — no re-render, keeps weekly panels open
   const entry = habitEntries.find(e => e.id === pageId);
-  if (entry) { entry[habitName] = newValue; renderHabitTracker(); }
+  if (entry) {
+    entry[habitName] = newValue;
+    // Patch all matching checkboxes for this page+habit
+    document.querySelectorAll(`.habit-checkbox[data-page="${pageId}"][data-habit="${habitName}"]`).forEach(el => {
+      el.classList.toggle('checked', newValue);
+      el.dataset.checked = newValue;
+    });
+    // Patch all progress bars and labels for this page
+    const pct = habitProgress(entry);
+    document.querySelectorAll(`[data-progress="${pageId}"]`).forEach(bar => bar.style.width = pct + '%');
+    document.querySelectorAll(`[data-progress-label="${pageId}"]`).forEach(lbl => lbl.textContent = pct + '%');
+  }
 
   try {
     await window.polymind.habits.updateCheckbox(pageId, habitName, newValue);
-    // Re-read cache for updated progress
-    const { entries } = await window.polymind.habits.getCached();
-    habitEntries = entries || [];
-    renderHabitTracker();
   } catch(e) {
     // Revert on failure
-    if (entry) { entry[habitName] = currentValue; renderHabitTracker(); }
+    if (entry) {
+      entry[habitName] = currentValue;
+      document.querySelectorAll(`.habit-checkbox[data-page="${pageId}"][data-habit="${habitName}"]`).forEach(el => {
+        el.classList.toggle('checked', currentValue);
+        el.dataset.checked = currentValue;
+      });
+      const pct = habitProgress(entry);
+      document.querySelectorAll(`[data-progress="${pageId}"]`).forEach(bar => bar.style.width = pct + '%');
+      document.querySelectorAll(`[data-progress-label="${pageId}"]`).forEach(lbl => lbl.textContent = pct + '%');
+    }
     console.error('habit update failed', e);
   }
 }
@@ -186,8 +201,8 @@ function renderHabitDaily(dateStr) {
   const pct = habitProgress(entry);
   list.innerHTML = `
     <div class="habit-progress-bar-wrap">
-      <div class="habit-progress-bar" style="width:${pct}%"></div>
-      <span class="habit-progress-label">${pct}%</span>
+      <div class="habit-progress-bar" data-progress="${entry.id}" style="width:${pct}%"></div>
+      <span class="habit-progress-label" data-progress-label="${entry.id}">${pct}%</span>
     </div>
     ${HABIT_PROPS.map(name => `
       <div class="habit-row">
@@ -219,9 +234,9 @@ function renderHabitWeekly() {
         <div class="habit-week-header" data-toggle="${entry.id}">
           <span class="habit-week-day">${dayName}</span>
           <div class="habit-week-bar-wrap">
-            <div class="habit-week-bar" style="width:${pct}%"></div>
+            <div class="habit-week-bar" data-progress="${entry.id}" style="width:${pct}%"></div>
           </div>
-          <span class="habit-week-pct">${pct}%</span>
+          <span class="habit-week-pct" data-progress-label="${entry.id}">${pct}%</span>
           <span class="habit-week-chevron">›</span>
         </div>
         <div class="habit-week-detail hidden" id="detail-${entry.id}">
@@ -269,9 +284,9 @@ function renderHabitMonthly() {
       <div class="habit-month-row">
         <span class="habit-month-day">${dayName}</span>
         <div class="habit-month-bar-wrap">
-          <div class="habit-month-bar" style="width:${pct}%"></div>
+          <div class="habit-month-bar" data-progress="${entry.id}" style="width:${pct}%"></div>
         </div>
-        <span class="habit-month-pct">${pct}%</span>
+        <span class="habit-month-pct" data-progress-label="${entry.id}">${pct}%</span>
       </div>`;
   }).join('');
 }

@@ -1,45 +1,71 @@
 :root {
-  --ink-black: #0d0e0f;
-  --soot-black: #111212;
-  --nightfall: #1a1b1b;
-  --charcoal-ash: #1c1e1d;
-  --deep-charcoal: #242424;
+  /* ── Palette ─────────────────────────────────────── */
+  --void:        #07080a;
+  --abyss:       #0a0b0d;
+  --depth:       #0e0f11;
+  --surface:     #131416;
+  --lifted:      #191a1d;
+  --raised:      #1f2023;
+  --rim:         #252729;
 
-  --bg-base: var(--ink-black);
-  --bg-surface: var(--soot-black);
-  --bg-elevated: #161616;
-  --bg-hover: #1e1e1e;
-  --bg-input: #161616;
+  /* ── Semantic surfaces ────────────────────────────── */
+  --bg-base:     var(--void);
+  --bg-surface:  var(--surface);
+  --bg-elevated: var(--lifted);
+  --bg-hover:    var(--raised);
+  --bg-input:    var(--depth);
+  --ink-black:   var(--void);
 
-  --border: #2b2b2b;
-  --border-subtle: #1c1c1c;
-  --border-focus: #3a3a3a;
+  /* ── Borders ──────────────────────────────────────── */
+  --border-subtle: rgba(255,255,255,0.04);
+  --border:        rgba(255,255,255,0.07);
+  --border-focus:  rgba(255,255,255,0.18);
 
-  --text: #f0f0f0;
-  --text-muted: #5a5a5a;
-  --text-faint: #333;
-  --text-inverse: #0d0e0f;
+  /* ── Text ─────────────────────────────────────────── */
+  --text:         #ececec;
+  --text-muted:   #4d4f54;
+  --text-faint:   #2a2b2e;
+  --text-dim:     #323437;
+  --text-inverse: #07080a;
 
-  --accent: #ffffff;
+  /* ── Accent (pure white, minimal use) ─────────────── */
+  --accent:       #ffffff;
   --accent-hover: #e8e8e8;
-  --accent-muted: rgba(255,255,255,0.06);
+  --accent-muted: rgba(255,255,255,0.055);
 
-  --win: #e2e2e2;
-  --win-muted: rgba(255,255,255,0.06);
-  --loss: #6b6b6b;
-  --loss-muted: rgba(107,107,107,0.12);
-  --breakeven: #909090;
+  /* ── Trade results ────────────────────────────────── */
+  --win:          #d4d4d4;
+  --win-muted:    rgba(255,255,255,0.05);
+  --loss:         #555759;
+  --loss-muted:   rgba(85,87,89,0.14);
+  --breakeven:    #7a7c80;
 
-  --radius-sm: 5px;
-  --radius-md: 7px;
-  --radius-lg: 10px;
+  /* ── Radius ───────────────────────────────────────── */
+  --radius-xs:  3px;
+  --radius-sm:  5px;
+  --radius-md:  8px;
+  --radius-lg:  12px;
+  --radius-xl:  16px;
 
-  --font: 'Segoe UI', 'Inter', 'Helvetica Neue', system-ui, sans-serif;
-  --font-mono: 'Cascadia Code', 'Consolas', monospace;
+  /* ── Typography ───────────────────────────────────── */
+  --font:      'Inter', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace;
+  --font-display: var(--font);
 
-  --sidebar-width: 204px;
-  --header-height: 50px;
+  /* ── Layout ───────────────────────────────────────── */
+  --sidebar-width:  52px;
+  --header-height:  46px;
 
-  --tracking-wide: 0.10em;
-  --tracking-tight: -0.02em;
+  /* ── Letter spacing ───────────────────────────────── */
+  --tracking-wide:  0.09em;
+  --tracking-tight: -0.025em;
+
+  /* ── Motion ───────────────────────────────────────── */
+  --spring:  cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --snap:    cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── Glass ────────────────────────────────────────── */
+  --glass-bg:     rgba(13,14,16,0.82);
+  --glass-border: rgba(255,255,255,0.06);
 }

@@ -1,134 +1,157 @@
 /* =========================================================
-   BANNERS
-   ========================================================= */
-
-.error-banner {
-  padding: 10px 13px;
-  background: rgba(120,40,40,0.15);
-  border: 1px solid rgba(200,80,80,0.2);
-  border-radius: var(--radius-sm);
-  color: #c47070;
-  font-size: 12px;
-  margin-bottom: 16px;
-  line-height: 1.5;
-}
-
-.success-banner {
-  padding: 10px 13px;
-  background: rgba(40,80,40,0.15);
-  border: 1px solid rgba(80,160,80,0.2);
-  border-radius: var(--radius-sm);
-  color: #6fa86f;
-  font-size: 12px;
-  margin-bottom: 16px;
-  line-height: 1.5;
-}
-
-.sync-error-bar {
-  padding: 10px 24px;
-  background: rgba(120,40,40,0.1);
-  border-bottom: 1px solid rgba(200,80,80,0.15);
-  color: #c47070;
-  font-size: 12px;
-}
-
-/* =========================================================
-   APP SHELL
+   APP SHELL — icon sidebar + topbar
    ========================================================= */
 
 #app-shell {
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
+  display: flex; height: 100vh; overflow: hidden;
+  will-change: opacity, transform;
 }
+
+/* ── Sidebar (icon rail) ─────────────────────────────────── */
 
 .sidebar {
   width: var(--sidebar-width);
   flex-shrink: 0;
-  background: var(--bg-surface);
+  background: var(--abyss);
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
+  align-items: center;
   padding: 0;
+  z-index: 10;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 18px 16px 16px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.brand-logo { color: var(--text-muted); }
-
-.brand-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: 0.04em;
-}
-
-.brand-sub {
-  font-size: 10px;
-  color: var(--text-muted);
-  letter-spacing: 0.04em;
-  margin-top: 1px;
-}
-
-.nav {
-  flex: 1;
-  padding: 10px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 9px;
+  justify-content: center;
   width: 100%;
-  padding: 8px 10px;
-  background: none;
-  border: none;
-  border-radius: var(--radius-sm);
-  text-align: left;
-  font-size: 13px;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: background 0.12s, color 0.12s;
-}
-
-.nav-item:hover { background: var(--bg-hover); color: var(--text); }
-.nav-item.active { background: var(--bg-hover); color: var(--text); }
-
-.sidebar-foot {
-  padding: 14px 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  color: var(--text-muted);
-  border-top: 1px solid var(--border-subtle);
-}
-
-.kernel-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #4a8a4a;
+  height: 52px;
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
-/* ---- Main area ---- */
+.brand-logo { color: var(--text-muted); transition: color 0.2s; }
+.brand-logo:hover { color: var(--text); }
+.brand-name, .brand-sub { display: none; }
+
+/* ── Nav (icon-only) ─────────────────────────────────────── */
+
+.nav {
+  flex: 1;
+  padding: 14px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.nav-label { display: none; }
+
+.nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-item:hover {
+  background: var(--accent-muted);
+  color: var(--text);
+}
+
+.nav-item.active {
+  background: var(--accent-muted);
+  color: var(--text);
+}
+
+/* Active indicator — left edge line */
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 50%; transform: translateY(-50%);
+  width: 2px; height: 18px;
+  background: var(--text);
+  border-radius: 0 2px 2px 0;
+  animation: indicator-in 0.25s var(--spring) both;
+}
+@keyframes indicator-in {
+  from { height: 0; opacity: 0; }
+  to   { height: 18px; opacity: 1; }
+}
+
+/* Tooltip on hover */
+.nav-item[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%; transform: translateY(-50%) translateX(-4px);
+  background: var(--raised);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.01em;
+  padding: 5px 9px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s, transform 0.15s;
+  z-index: 100;
+}
+.nav-item[data-tip]:hover::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Divider between nav groups */
+.nav-divider {
+  width: 20px; height: 1px;
+  background: var(--border-subtle);
+  margin: 6px 0;
+}
+
+/* ── Sidebar foot ─────────────────────────────────────── */
+
+.sidebar-foot {
+  padding: 14px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border-top: 1px solid var(--border-subtle);
+  width: 100%;
+}
+
+#sidebar-notion-label { display: none; }
+
+.kernel-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: rgba(80,160,80,0.7);
+  box-shadow: 0 0 5px rgba(80,160,80,0.4);
+}
+
+/* ── Main area ─────────────────────────────────────────── */
 
 .main {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: var(--bg-base);
 }
+
+/* ── Topbar ─────────────────────────────────────────────── */
 
 .topbar {
   height: var(--header-height);
@@ -136,13 +159,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 22px;
+  padding: 0 20px;
   border-bottom: 1px solid var(--border-subtle);
+  background: var(--abyss);
+  backdrop-filter: blur(0px);
 }
 
 .topbar h1 {
-  margin: 0;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
@@ -150,89 +174,58 @@
 }
 
 .topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: flex; align-items: center; gap: 8px;
 }
 
 .sync-status {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text-muted);
+  letter-spacing: 0.01em;
 }
+
+/* ── Content area ─────────────────────────────────────── */
 
 .content {
   flex: 1;
   overflow-y: auto;
-  padding: 22px;
+  padding: 20px;
 }
 
-/* Home view overrides .content padding */
 #view-home.view-home {
-  margin: -22px;
-  width: calc(100% + 44px);
+  margin: -20px;
+  width: calc(100% + 40px);
 }
 
-/* ---- Settings ---- */
+/* ── Settings ─────────────────────────────────────────── */
 
-.settings-section { max-width: 440px; }
-
+.settings-section { max-width: 420px; }
 .settings-lead {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin: 0 0 22px;
-  line-height: 1.6;
+  font-size: 12.5px; color: var(--text-muted);
+  margin-bottom: 20px; line-height: 1.6;
 }
 
-/* ---- Responsive ---- */
+/* ── Table row clicks ─────────────────────────────────── */
 
-@media (max-width: 760px) {
-  .gate-frame {
-    grid-template-columns: 1fr;
-    max-width: 440px;
-    min-height: auto;
-    border-radius: var(--radius-md);
-  }
-  .gate-right { display: none; }
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
-}
+table.trades tbody tr { cursor: pointer; }
+table.trades tbody tr:hover td { background: var(--bg-hover); }
 
-/* ---- Row click affordance ---- */
-table.trades tbody tr {
-  cursor: pointer;
-}
-table.trades tbody tr:hover td {
-  background: var(--bg-hover);
-}
+/* ── Shortcut hints ───────────────────────────────────── */
 
-/* ---- Shortcut hint bar ---- */
 .shortcut-hint {
-  position: fixed;
-  bottom: 14px;
-  right: 18px;
-  font-size: 10px;
-  color: var(--text-muted);
-  letter-spacing: 0.05em;
-  display: flex;
-  gap: 14px;
-  pointer-events: none;
-  opacity: 0.5;
+  position: fixed; bottom: 12px; right: 16px;
+  font-size: 10px; color: var(--text-faint);
+  letter-spacing: 0.04em;
+  display: flex; gap: 12px;
+  pointer-events: none; opacity: 0.5;
 }
 .shortcut-hint kbd {
-  display: inline-block;
-  padding: 1px 5px;
-  border: 1px solid var(--border);
+  display: inline-block; padding: 1px 4px;
+  border: 1px solid var(--border-subtle);
   border-radius: 3px;
-  font-family: var(--font-mono);
-  font-size: 10px;
+  font-family: var(--font-mono); font-size: 9px;
 }
 
-/* ---- View transition (already handled in JS, just ensure no flash) ---- */
-#view-dashboard, #view-settings {
-  will-change: opacity;
-}
+#gate:not(.hidden) ~ .shortcut-hint { display: none; }
 
-/* Hide shortcut hints on gate screen */
-#gate:not(.hidden) ~ .shortcut-hint {
-  display: none;
-}
-
+/* ── View fade ─────────────────────────────────────────── */
+#view-dashboard, #view-settings { will-change: opacity; }

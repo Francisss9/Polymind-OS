@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'" />
   <title>Polymind OS</title>
   <link rel="stylesheet" href="styles/base.css" />
   <link rel="stylesheet" href="styles/gate.css" />
@@ -132,15 +132,15 @@
         </div>
       </div>
 
-      <!-- Right: decorative art panel -->
+        <!-- Right: decorative art panel -->
       <div class="gate-right" id="gate-art-panel">
         <div class="gate-art-overlay">
           <div class="gate-art-label">Private kernel</div>
-          <div class="gate-art-sub">Your data stays yours.</div>
+          <div class="gate-art-sub">Your data,<br>your space.</div>
         </div>
-        <!-- Custom image slot: add your image as gate-art-bg class or data-src -->
         <div class="gate-art-bg" id="gate-art-bg"></div>
         <div class="gate-art-grid"></div>
+        <div class="gate-art-vignette"></div>
       </div>
 
     </div>
@@ -163,29 +163,27 @@
       </div>
 
       <nav class="nav">
-        <div class="nav-label">Workspace</div>
-        <button class="nav-item" data-view="home">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <button class="nav-item" data-view="home" data-tip="WorkStation">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
             <path d="M2 6.5L8 2l6 4.5V14H10v-3H6v3H2V6.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
           </svg>
-          WorkStation
         </button>
 
-        <div class="nav-label" style="margin-top:10px">Modules</div>
-        <button class="nav-item active" data-view="dashboard">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <path d="M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+        <div class="nav-divider"></div>
+
+        <button class="nav-item active" data-view="dashboard" data-tip="Trading">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+            <path d="M2 11l4-4 3 3 5-6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          Trading Tracker
         </button>
 
-        <div class="nav-label" style="margin-top:10px">System</div>
-        <button class="nav-item" data-view="settings">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <div class="nav-divider"></div>
+
+        <button class="nav-item" data-view="settings" data-tip="Kernel">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
             <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.2"/>
             <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
           </svg>
-          Kernel
         </button>
       </nav>
 

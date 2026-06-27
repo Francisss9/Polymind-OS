@@ -12,7 +12,7 @@
 }
 
 .stat-card {
-  background: var(--bg-surface);
+  background: var(--surface);
   padding: 18px 20px;
 }
 
@@ -37,7 +37,7 @@
 /* ---- Trades table ---- */
 
 .trades-panel {
-  background: var(--bg-surface);
+  background: var(--surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   overflow: hidden;
@@ -59,7 +59,7 @@
 
 .search-input {
   padding: 6px 10px;
-  background: var(--bg-input);
+  background: var(--depth);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   font-size: 12px;
@@ -90,12 +90,12 @@ table.trades th {
   letter-spacing: var(--tracking-wide);
   color: var(--text-muted);
   font-weight: 500;
-  background: var(--bg-elevated);
+  background: var(--lifted);
 }
 
 table.trades tr:last-child td { border-bottom: none; }
 table.trades tbody tr { transition: background 0.1s; }
-table.trades tbody tr:hover td { background: var(--bg-hover); }
+table.trades tbody tr:hover td { background: var(--raised); }
 
 table.trades .pnl-positive { color: var(--win); }
 table.trades .pnl-negative { color: var(--loss); }
@@ -137,7 +137,7 @@ table.trades .pnl-negative { color: var(--loss); }
 .period-tabs {
   display: flex;
   gap: 2px;
-  background: var(--bg-surface);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 3px;
@@ -167,7 +167,7 @@ table.trades .pnl-negative { color: var(--loss); }
    ========================================================= */
 
 .calendar-panel {
-  background: var(--bg-surface);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -198,7 +198,7 @@ table.trades .pnl-negative { color: var(--loss); }
   transition: background 0.12s, color 0.12s;
   line-height: 1;
 }
-.cal-nav-btn:hover { background: var(--bg-hover); color: var(--text); }
+.cal-nav-btn:hover { background: var(--raised); color: var(--text); }
 
 /* ---- Daily calendar grid ---- */
 
@@ -309,7 +309,7 @@ table.trades .pnl-negative { color: var(--loss); }
   justify-content: center;
   padding: 12px 16px;
   border-right: 1px solid var(--border-subtle);
-  background: var(--bg-elevated);
+  background: var(--lifted);
 }
 .cal-week-label .week-num {
   font-size: 10px;
@@ -337,7 +337,7 @@ table.trades .pnl-negative { color: var(--loss); }
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: var(--bg-elevated);
+  background: var(--lifted);
   border-right: 1px solid var(--border-subtle);
   flex-direction: column;
   justify-content: center;
@@ -374,7 +374,7 @@ table.trades .pnl-negative { color: var(--loss); }
   justify-content: center;
   padding: 12px 16px;
   border-right: 1px solid var(--border-subtle);
-  background: var(--bg-elevated);
+  background: var(--lifted);
 }
 .cal-month-label .month-name {
   font-size: 12px;
@@ -417,7 +417,7 @@ table.trades .pnl-negative { color: var(--loss); }
   justify-content: center;
   padding: 14px 16px;
   border-right: 1px solid var(--border-subtle);
-  background: var(--bg-elevated);
+  background: var(--lifted);
 }
 .cal-quarter-label .q-name {
   font-size: 13px;

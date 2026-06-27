@@ -267,11 +267,9 @@ function showView(name) {
     if (!el) return;
     el.classList.toggle('hidden', v !== name);
     if (v === name) {
-      el.style.opacity = '0';
-      requestAnimationFrame(() => {
-        el.style.transition = 'opacity 0.18s ease';
-        el.style.opacity = '1';
-      });
+      el.classList.remove('view-enter');
+      void el.offsetWidth; // reflow to restart animation
+      el.classList.add('view-enter');
     }
   });
 
@@ -283,7 +281,7 @@ function showView(name) {
     clearBanners($('#settings-error'), $('#settings-success'));
   }
 
-  const titles = { home: 'WorkStation', dashboard: 'Trading Tracker', settings: 'Kernel' };
+  const titles = { home: 'WorkStation', dashboard: 'Trading', settings: 'Kernel' };
   $$('.nav-item').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === name));
   $('#view-title').textContent = titles[name] || name;
   currentView = name;
