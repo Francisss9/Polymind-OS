@@ -9,3 +9,9 @@ Thumbs.db
 config.local.js
 .env
 .env.*
+
+# Bundled vendor assets (auto-copied by postinstall)
+renderer/assets/js/chart.umd.min.js
+
+# Build output
+out/

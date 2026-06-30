@@ -97,6 +97,14 @@ table.trades tr:last-child td { border-bottom: none; }
 table.trades tbody tr { transition: background 0.1s; }
 table.trades tbody tr:hover td { background: var(--raised); }
 
+@keyframes trade-row-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.trade-row-enter {
+  animation: trade-row-in 0.2s ease both;
+}
+
 table.trades .pnl-positive { color: var(--win); }
 table.trades .pnl-negative { color: var(--loss); }
 
@@ -490,3 +498,195 @@ table.trades .pnl-negative { color: var(--loss); }
 .pos { color: var(--win) !important; }
 .neg { color: var(--loss) !important; }
 
+
+/* =========================================================
+   CHARTS VIEW
+   ========================================================= */
+
+/* ---- Balance stat card ---- */
+
+.stat-card-balance .value {
+  font-size: 18px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+/* ---- Charts header ---- */
+
+.charts-header {
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.charts-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.charts-title {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.charts-balance-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.charts-balance-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.charts-balance-value {
+  font-size: 28px;
+  font-weight: 200;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.charts-balance-date {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* ---- Charts grid ---- */
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border-subtle);
+  padding: 0;
+}
+
+.chart-card {
+  background: var(--bg-base);
+  padding: 18px 20px;
+}
+
+.chart-card-wide {
+  grid-column: span 2;
+}
+
+.chart-card-narrow {
+  grid-column: span 1;
+}
+
+.chart-card-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.chart-card-label {
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.chart-card-sub {
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+.chart-wrap {
+  position: relative;
+  height: 160px;
+}
+
+.chart-wrap-donut {
+  height: 140px;
+}
+
+/* ---- Donut legend ---- */
+
+.donut-legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.donut-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.donut-item strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.donut-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ---- Heatmap ---- */
+
+.heatmap-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.heatmap-cell {
+  width: calc(25% - 4px);
+  min-width: 72px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: default;
+  transition: opacity 0.15s;
+}
+.heatmap-cell:hover { opacity: 0.8; }
+
+.heatmap-month {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.heatmap-year {
+  font-size: 9px;
+  color: var(--text-faint);
+}
+
+.heatmap-val {
+  font-size: 11px;
+  color: var(--text);
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+/* ---- Empty state ---- */
+
+.chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 11px;
+  color: var(--text-faint);
+  font-style: italic;
+}

@@ -199,6 +199,12 @@
           </svg>
         </button>
 
+        <button class="nav-item" data-view="charts" data-tip="Charts">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+            <path d="M2 13V8h2.5v5H2zM6.5 13V5H9v8H6.5zM11 13V2h2.5v11H11z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
         <div class="nav-divider"></div>
 
         <button class="nav-item" data-view="settings" data-tip="Kernel">
@@ -440,6 +446,10 @@
           </div>
 
           <div class="stats-row">
+            <div class="stat-card stat-card-balance">
+              <div class="label">Balance</div>
+              <div class="value" id="stat-balance">—</div>
+            </div>
             <div class="stat-card">
               <div class="label">Net P&amp;L</div>
               <div class="value" id="stat-pnl">—</div>
@@ -485,6 +495,69 @@
         </section>
 
 
+        <!-- Charts -->
+        <section id="view-charts" class="hidden">
+          <div class="charts-header">
+            <div class="charts-title-row">
+              <h2 class="charts-title">Performance</h2>
+              <button class="btn" id="btn-balance-sync">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                  <path d="M14 8A6 6 0 112 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                  <path d="M14 4v4h-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Sync balance
+              </button>
+            </div>
+            <div class="charts-balance-row">
+              <span class="charts-balance-label">Current balance</span>
+              <span class="charts-balance-value" id="charts-balance">—</span>
+              <span class="charts-balance-date" id="charts-balance-date"></span>
+            </div>
+          </div>
+
+          <div class="charts-grid">
+            <!-- Equity curve -->
+            <div class="chart-card chart-card-wide">
+              <div class="chart-card-header">
+                <span class="chart-card-label">EQUITY CURVE</span>
+                <span class="chart-card-sub" id="chart-equity-range"></span>
+              </div>
+              <div class="chart-wrap">
+                <canvas id="chart-equity"></canvas>
+              </div>
+            </div>
+
+            <!-- P&L bars -->
+            <div class="chart-card chart-card-wide">
+              <div class="chart-card-header">
+                <span class="chart-card-label">P&amp;L PER TRADE</span>
+              </div>
+              <div class="chart-wrap">
+                <canvas id="chart-pnl-bars"></canvas>
+              </div>
+            </div>
+
+            <!-- Win/Loss donut -->
+            <div class="chart-card chart-card-narrow">
+              <div class="chart-card-header">
+                <span class="chart-card-label">WIN / LOSS</span>
+              </div>
+              <div class="chart-wrap chart-wrap-donut">
+                <canvas id="chart-donut"></canvas>
+              </div>
+              <div class="donut-legend" id="donut-legend"></div>
+            </div>
+
+            <!-- Monthly heatmap -->
+            <div class="chart-card chart-card-narrow">
+              <div class="chart-card-header">
+                <span class="chart-card-label">MONTHLY P&amp;L</span>
+              </div>
+              <div id="chart-heatmap" class="chart-heatmap"></div>
+            </div>
+          </div>
+        </section>
+
         <!-- Settings / Kernel -->
         <section id="view-settings" class="hidden settings-section">
           <p class="settings-lead">Credentials are stored locally and never committed.</p>
@@ -505,6 +578,10 @@
           <div class="form-group">
             <label for="settings-goals-db">Saving Goals — Database ID or URL</label>
             <input id="settings-goals-db" type="text" placeholder="Paste ID or full Notion URL" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label for="settings-balance-db">Account Balance — Database ID or URL</label>
+            <input id="settings-balance-db" type="text" placeholder="Paste ID or full Notion URL" autocomplete="off" />
           </div>
           <div style="display:flex;gap:8px;margin-top:4px;">
             <button type="button" class="btn btn-primary" id="btn-settings-save">Save</button>
@@ -599,9 +676,12 @@
     <span><kbd>Esc</kbd> close</span>
   </div>
 
-  <script src="js/auth.js"></script>
+  <!-- Chart.js — local copy. Run: cp node_modules/chart.js/dist/chart.umd.min.js renderer/assets/js/chart.umd.min.js -->
+  <script src="assets/js/chart.umd.min.js"></script>
+  <script src="js/utils.js"></script>
   <script src="js/home.js"></script>
   <script src="js/calendar.js"></script>
+  <script src="js/charts.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

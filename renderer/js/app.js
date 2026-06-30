@@ -48,6 +48,7 @@ let config = {};
 let syncing = false;
 let connecting = false;
 let currentView = 'dashboard';
+let currentBalance = null;
 
 // =========================================================
 // Gate
@@ -61,15 +62,12 @@ function showGate(step = 'login') {
 
 function showApp() {
   $('#gate').classList.add('hidden');
-  $('#app-shell').classList.remove('hidden');
-  // Animate app shell in with slide-up + fade
-  $('#app-shell').style.opacity = '0';
-  $('#app-shell').style.transform = 'translateY(10px)';
-  requestAnimationFrame(() => {
-    $('#app-shell').style.transition = 'opacity 0.35s cubic-bezier(0.22,1,0.36,1), transform 0.35s cubic-bezier(0.22,1,0.36,1)';
-    $('#app-shell').style.opacity = '1';
-    $('#app-shell').style.transform = 'translateY(0)';
-  });
+  const shell = $('#app-shell');
+  shell.classList.remove('hidden');
+  // Trigger CSS animation via class — keeps animation logic in CSS, not JS
+  shell.classList.remove('app-enter');
+  void shell.offsetWidth; // reflow
+  shell.classList.add('app-enter');
 }
 
 function showStep(name) {
@@ -90,40 +88,10 @@ function showBanner(el, msg) {
 function clearBanners(...els) { els.forEach((el) => el && el.classList.add('hidden')); }
 
 // =========================================================
-// Format
+// Format & utils — see renderer/js/utils.js
 // =========================================================
-
-function formatPnl(v) {
-  if (typeof v !== 'number') return '—';
-  return `${v > 0 ? '+' : ''}${v.toFixed(2)}`;
-}
-function formatDate(iso) { return iso ? iso.slice(0, 10) : '—'; }
-function resultClass(r) {
-  r = (r || '').toLowerCase();
-  return r === 'win' ? 'win' : r === 'loss' ? 'loss' : 'breakeven';
-}
-function escapeHtml(s) {
-  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// =========================================================
-// Stats
-// =========================================================
-
-function animateNumber(el, target, isFloat = true, prefix = '') {
-  const start = parseFloat(el.dataset.current || 0) || 0;
-  const duration = 600;
-  const startTime = performance.now();
-  el.dataset.current = target;
-  function step(now) {
-    const t = Math.min((now - startTime) / duration, 1);
-    const ease = 1 - Math.pow(1 - t, 3);
-    const val = start + (target - start) * ease;
-    el.textContent = prefix + (isFloat ? val.toFixed(2) : Math.round(val).toString());
-    if (t < 1) requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-}
+// formatPnl, formatDate, resultClass, escapeHtml, animateNumber
+// are defined in utils.js (loaded before app.js in index.html)
 
 function updateStats() {
   // Stats are now handled by the calendar view's updatePeriodStats()
@@ -156,8 +124,8 @@ function renderTrades() {
 
   filteredTrades.forEach((trade, i) => {
     const tr = document.createElement('tr');
-    tr.style.opacity = '0';
-    tr.style.transform = 'translateY(6px)';
+    tr.className = 'trade-row-enter';
+    tr.style.animationDelay = `${i * 30}ms`;
     tr.innerHTML = `
       <td>${formatDate(trade.date)}</td>
       <td>${escapeHtml(trade.pair)}</td>
@@ -174,13 +142,6 @@ function renderTrades() {
         </div>
       </td>`;
     tbody.appendChild(tr);
-
-    // Staggered row entrance
-    setTimeout(() => {
-      tr.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-      tr.style.opacity = '1';
-      tr.style.transform = 'translateY(0)';
-    }, i * 30);
   });
 
   // Click row to open (not just edit button)
@@ -261,14 +222,49 @@ async function syncTrades() {
 // Views
 // =========================================================
 
+function updateBalanceStat(value) {
+  currentBalance = value;
+  const fmt = value != null
+    ? `€${Number(value).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : '—';
+  const statEl = document.getElementById('stat-balance');
+  if (statEl) statEl.textContent = fmt;
+  const chartsEl = document.getElementById('charts-balance');
+  if (chartsEl) chartsEl.textContent = fmt;
+}
+
+async function loadCachedBalance() {
+  try {
+    const { balance } = await window.polymind.balance.getCached();
+    updateBalanceStat(balance);
+  } catch(e) { console.warn('balance cache', e); }
+}
+
+async function syncBalance() {
+  const btn = document.getElementById('btn-balance-sync');
+  if (btn) btn.disabled = true;
+  try {
+    const { balance } = await window.polymind.balance.sync();
+    updateBalanceStat(balance);
+    if (typeof renderCharts === 'function') renderCharts(trades);
+  } catch(e) {
+    console.error('[balance] Sync failed:', e.message);
+    // Show error in the charts balance display so user sees it
+    const el = document.getElementById('charts-balance');
+    if (el) el.textContent = 'Sync failed';
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
 function showView(name) {
-  ['home', 'dashboard', 'settings'].forEach((v) => {
+  ['home', 'dashboard', 'charts', 'settings'].forEach((v) => {
     const el = $(`#view-${v}`);
     if (!el) return;
     el.classList.toggle('hidden', v !== name);
     if (v === name) {
       el.classList.remove('view-enter');
-      void el.offsetWidth; // reflow to restart animation
+      void el.offsetWidth;
       el.classList.add('view-enter');
     }
   });
@@ -277,11 +273,16 @@ function showView(name) {
     $('#settings-database').value = config.databaseId || '';
     $('#settings-habits-db').value = config.habitsDbId || '';
     $('#settings-goals-db').value = config.goalsDbId || '';
+    $('#settings-balance-db').value = config.balanceDbId || '';
     $('#settings-token').value = '';
     clearBanners($('#settings-error'), $('#settings-success'));
   }
 
-  const titles = { home: 'WorkStation', dashboard: 'Trading', settings: 'Kernel' };
+  if (name === 'charts') {
+    if (typeof renderCharts === 'function') renderCharts(trades);
+  }
+
+  const titles = { home: 'WorkStation', dashboard: 'Trading', charts: 'Charts', settings: 'Kernel' };
   $$('.nav-item').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === name));
   $('#view-title').textContent = titles[name] || name;
   currentView = name;
@@ -307,19 +308,13 @@ function openTradeModal(trade = null) {
 
   const modal = $('#trade-modal');
   modal.classList.remove('hidden');
-  // Animate in
   const box = modal.querySelector('.modal');
-  box.style.opacity = '0';
-  box.style.transform = 'translateY(12px) scale(0.98)';
-  requestAnimationFrame(() => {
-    box.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-    box.style.opacity = '1';
-    box.style.transform = 'translateY(0) scale(1)';
-  });
+  box.classList.remove('modal-enter', 'modal-leave');
+  void box.offsetWidth;
+  box.classList.add('modal-enter');
 
-  // Focus first empty field
   setTimeout(() => {
-    const first = modal.querySelector('input:not([type=hidden]):not([value])') || $('#trade-pair');
+    const first = modal.querySelector('input:not([type=hidden])') || $('#trade-pair');
     first?.focus();
   }, 50);
 }
@@ -327,11 +322,11 @@ function openTradeModal(trade = null) {
 function closeTradeModal() {
   const modal = $('#trade-modal');
   const box = modal.querySelector('.modal');
-  box.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
-  box.style.opacity = '0';
-  box.style.transform = 'translateY(8px) scale(0.98)';
+  box.classList.remove('modal-enter');
+  box.classList.add('modal-leave');
   setTimeout(() => {
     modal.classList.add('hidden');
+    box.classList.remove('modal-leave');
     $('#trade-form').reset();
   }, 150);
 }
@@ -437,6 +432,7 @@ async function handleLogin() {
     } else {
       showApp();
       await loadCached();
+      await loadCachedBalance();
       updateSyncStatus(config.lastSyncedAt);
       showView('home');
     }
@@ -491,9 +487,10 @@ async function handleNotionConnect() {
 async function handleSettingsSave() {
   clearBanners($('#settings-error'), $('#settings-success'));
   const payload = {
-    databaseId: $('#settings-database').value.trim(),
-    habitsDbId: $('#settings-habits-db').value.trim(),
-    goalsDbId: $('#settings-goals-db').value.trim(),
+    databaseId:  $('#settings-database').value.trim(),
+    habitsDbId:  $('#settings-habits-db').value.trim(),
+    goalsDbId:   $('#settings-goals-db').value.trim(),
+    balanceDbId: $('#settings-balance-db').value.trim(),
   };
   const token = $('#settings-token').value.trim();
   if (token) payload.notionToken = token;
@@ -563,14 +560,8 @@ function bindEvents() {
   $('#btn-sync').addEventListener('click', () => syncTrades());
   $('#btn-new-trade').addEventListener('click', () => openTradeModal());
 
-  // Show/hide trade actions based on view
-  const tradeActions = document.querySelector('.topbar-trade-actions');
-  if (tradeActions) {
-    const observer = new MutationObserver(() => {
-      const show = currentView === 'dashboard';
-      tradeActions.style.display = show ? 'flex' : 'none';
-    });
-  }
+  // Balance / Charts
+  $('#btn-balance-sync')?.addEventListener('click', syncBalance);
 
   // Modal
   $('#btn-modal-cancel').addEventListener('click', closeTradeModal);

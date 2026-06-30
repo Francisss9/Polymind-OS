@@ -26,6 +26,10 @@ contextBridge.exposeInMainWorld('polymind', {
     sync: () => ipcRenderer.invoke('goals:sync'),
     update: (id, saved, earned) => ipcRenderer.invoke('goals:update', { id, saved, earned }),
   },
+  balance: {
+    getCached: () => ipcRenderer.invoke('balance:getCached'),
+    sync:      () => ipcRenderer.invoke('balance:sync'),
+  },
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
   window: {
     minimize: () => ipcRenderer.send('window-minimize'),

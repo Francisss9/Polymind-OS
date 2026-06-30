@@ -32,7 +32,9 @@ function loadHomeData() {
   try {
     const saved = JSON.parse(localStorage.getItem(HOME_STORAGE_KEY));
     if (saved) homeData = { ...homeData, ...saved };
-  } catch {}
+  } catch(e) {
+    console.warn('[home] Failed to parse local storage data — resetting.', e.message);
+  }
 }
 
 function saveHomeData() {

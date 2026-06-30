@@ -46,6 +46,15 @@
 .tb-btn:hover { background: var(--lifted); color: var(--text); }
 .tb-close:hover { background: rgba(180, 50, 50, 0.3); color: #e07070; }
 
+@keyframes app-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+#app-shell.app-enter {
+  animation: app-enter 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* Push all content below the titlebar */
 #gate,
 #app-shell {
