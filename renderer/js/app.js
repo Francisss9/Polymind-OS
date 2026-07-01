@@ -28,6 +28,7 @@ const NOTION_INTEGRATIONS_URL = 'https://www.notion.so/my-integrations';
 const AUTH_KEY = 'polymind_auth';
 
 function getLocalAuth() {
+  // Silent catch intentional — corrupted localStorage returns null = treated as first run
   try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch { return null; }
 }
 function setLocalAuth(email, password) {

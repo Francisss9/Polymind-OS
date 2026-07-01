@@ -36,7 +36,9 @@ function showStep(name) {
 const _lastRenderHash = {};
 
 function _hash(data) {
-  try { return JSON.stringify(data).length + (data?.length ?? 0); } catch { return 0; }
+  try { return JSON.stringify(data).length + (data?.length ?? 0); } catch(e) {
+    console.warn('[shell] _hash failed:', e.message); return 0;
+  }
 }
 
 function showView(name) {
