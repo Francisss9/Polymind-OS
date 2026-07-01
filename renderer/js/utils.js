@@ -49,7 +49,26 @@ function escapeHtml(s) {
 }
 
 /**
- * Animate a number element from its current displayed value to target.
+ * Show a banner element with a message.
+ * @param {HTMLElement|null} el
+ * @param {string} msg
+ */
+function showBanner(el, msg) {
+  if (!el) return;
+  el.textContent = msg || '';
+  el.classList.toggle('hidden', !msg);
+}
+
+/**
+ * Hide multiple banner elements.
+ * @param {...HTMLElement} els
+ */
+function clearBanners(...els) {
+  els.forEach((el) => el && el.classList.add('hidden'));
+}
+
+/**
+ * Animate a number counting up/down inside an element.
  * @param {HTMLElement} el
  * @param {number} target
  * @param {boolean} isFloat

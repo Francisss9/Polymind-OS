@@ -129,3 +129,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .stagger-4 { animation-delay: 0.16s; }
 .stagger-5 { animation-delay: 0.20s; }
 .stagger-6 { animation-delay: 0.24s; }
+
+/* ---- View-level error boundary ---- */
+.view-error {
+  margin: 20px;
+  padding: 14px 16px;
+  background: rgba(100,30,30,0.14);
+  border: 1px solid rgba(180,60,60,0.18);
+  border-radius: var(--radius-sm);
+  color: #a86060;
+  font-size: 12px;
+  line-height: 1.6;
+}
