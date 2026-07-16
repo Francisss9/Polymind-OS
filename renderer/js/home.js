@@ -64,7 +64,7 @@ function updateClock() {
 // HABITS — Notion synced
 // =========================================================
 
-function todayISO() { return new Date().toISOString().slice(0, 10); }
+// todayISO() and toISODate() live in utils.js
 
 function getWeekRange() {
   const today = new Date();
@@ -73,13 +73,13 @@ function getWeekRange() {
   mon.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
   const sun = new Date(mon);
   sun.setDate(mon.getDate() + 6);
-  return { start: mon.toISOString().slice(0,10), end: sun.toISOString().slice(0,10) };
+  return { start: toISODate(mon), end: toISODate(sun) };
 }
 
 function getMonthRange() {
   const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
-  const end = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().slice(0,10);
+  const start = toISODate(new Date(now.getFullYear(), now.getMonth(), 1));
+  const end   = toISODate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
   return { start, end };
 }
 

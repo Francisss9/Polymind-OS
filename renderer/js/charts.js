@@ -320,7 +320,7 @@ function renderHeatmap(tradeList) {
   // Max absolute value for scaling colour intensity
   const maxAbs = Math.max(...Object.values(byMonth).map(Math.abs), 1);
 
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const months = MONTHS_SHORT;
 
   let html = '<div class="heatmap-grid">';
   let y = minY, m = minM;
@@ -360,7 +360,7 @@ function renderHeatmap(tradeList) {
 function fmtChartDate(iso) {
   if (!iso) return '';
   const [, m, d] = iso.split('-');
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const months = MONTHS_SHORT;
   return `${months[parseInt(m,10)-1]} ${parseInt(d,10)}`;
 }
 
@@ -395,7 +395,10 @@ async function renderCharts(tradeList) {
   try {
     const cached = await window.polymind.balance.getCached();
     balanceHistory = cached.history || [];
-  } catch(e) { /* no balance DB configured yet */ }
+  } catch(e) {
+    // Intentionally silent — balance DB is optional. Charts render without it.
+    console.warn('[charts] Balance history not available:', e.message);
+  }
 
   renderEquityCurve(tradeList || [], balanceHistory);
   renderPnlBars(tradeList || []);

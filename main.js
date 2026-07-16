@@ -4,18 +4,13 @@ const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const { getNotionClient, resetNotionClient } = require('./kernel/notion-client');
 const { normalizeDatabaseId } = require('./kernel/utils');
-const {
-  getConfig, setConfig,
-  getCachedTrades, setCachedTrades, getLastSyncedAt, setLastSyncedAt,
-  getCachedHabits, setCachedHabits, getHabitsLastSyncedAt, setHabitsLastSyncedAt,
-  getCachedGoals, setCachedGoals, getGoalsLastSyncedAt, setGoalsLastSyncedAt,
-  getCachedBalance, setCachedBalance, getBalanceLastSyncedAt, setBalanceLastSyncedAt,
-  getCachedBalanceHistory, setCachedBalanceHistory,
-} = require('./kernel/store');
-const { tradeToNotionProperties, notionPageToTrade }   = require('./modules/trading-tracker/schema');
-const { HABIT_PROPS, notionPageToHabitEntry, habitCheckboxPatch } = require('./modules/habits/schema');
-const { notionPageToGoal, goalToNotionProperties }     = require('./modules/saving-goals/schema');
-const { notionPageToBalance }                          = require('./modules/balance/schema');
+const { toUserError } = require('./kernel/errors');
+const { syncCollection } = require('./kernel/notion-sync');
+const store = require('./kernel/store');
+const { tradeToNotionProperties, notionPageToTrade }               = require('./modules/trading-tracker/schema');
+const { notionPageToHabitEntry, habitCheckboxPatch }                = require('./modules/habits/schema');
+const { notionPageToGoal, goalToNotionProperties }                  = require('./modules/saving-goals/schema');
+const { notionPageToBalance }                                       = require('./modules/balance/schema');
 
 // =========================================================
 // Window
@@ -55,54 +50,35 @@ app.on('activate', () => {
 });
 
 // =========================================================
-// Shared helpers
+// Notion access helpers
 // =========================================================
+// main.js's only job with Notion is: get a ready client, and turn
+// whatever goes wrong into a clean message. Pagination, per-row error
+// tolerance, and error-body parsing now live in kernel/ — main.js just
+// wires IPC channels to that behavior.
 
 /**
- * Returns a configured Notion client + the trading databaseId.
- * Throws a clean user-facing error if not configured.
- */
-function requireNotion() {
-  const config = getConfig();
-  const client = getNotionClient(config.notionToken);
-  if (!client || !config.databaseId) {
-    throw new Error('Notion is not configured. Complete setup first.');
-  }
-  return { client, databaseId: config.databaseId, config };
-}
-
-/**
- * Returns the shared singleton Notion client.
- * Throws if token is missing.
+ * Resolve the configured Notion client, throwing a clean error if
+ * setup hasn't been completed. Every handler below goes through this
+ * instead of touching getNotionClient/getConfig directly, so "not
+ * configured" always fails the same way.
  */
 function requireNotionClient() {
-  const config = getConfig();
+  const config = store.getConfig();
   const client = getNotionClient(config.notionToken);
-  if (!client) throw new Error('Notion token not configured.');
+  if (!client) throw new Error('Notion token not configured. Complete setup first.');
   return { client, config };
 }
 
 /**
- * Paginate through all results of a Notion database query.
- * @param {import('@notionhq/client').Client} client
- * @param {string} databaseId
- * @param {object} options  Extra query options (sorts, filter, page_size)
- * @returns {Promise<Array>} All result pages
+ * Resolve a specific per-module database ID from config, throwing a
+ * clean, module-named error if it's missing. Centralizes what used to
+ * be four near-identical "if (!XDbId) throw ..." lines.
  */
-async function queryAll(client, databaseId, options = {}) {
-  const results = [];
-  let cursor;
-  do {
-    const res = await client.databases.query({
-      database_id: databaseId,
-      start_cursor: cursor,
-      page_size: 100,
-      ...options,
-    });
-    results.push(...res.results);
-    cursor = res.has_more ? res.next_cursor : undefined;
-  } while (cursor);
-  return results;
+function requireDatabaseId(config, key, label) {
+  const dbId = normalizeDatabaseId(config[key] || '');
+  if (!dbId) throw new Error(`${label} not configured. Add it in Kernel settings.`);
+  return dbId;
 }
 
 // =========================================================
@@ -110,17 +86,17 @@ async function queryAll(client, databaseId, options = {}) {
 // =========================================================
 
 ipcMain.handle('config:get', () => ({
-  ...getConfig(),
-  lastSyncedAt: getLastSyncedAt(),
+  ...store.getConfig(),
+  lastSyncedAt: store.getLastSyncedAt(),
 }));
 
 ipcMain.handle('config:set', (_e, payload) => {
-  if (payload.databaseId)  payload.databaseId  = normalizeDatabaseId(payload.databaseId);
-  if (payload.habitsDbId)  payload.habitsDbId  = normalizeDatabaseId(payload.habitsDbId);
-  if (payload.goalsDbId)   payload.goalsDbId   = normalizeDatabaseId(payload.goalsDbId);
-  if (payload.balanceDbId) payload.balanceDbId = normalizeDatabaseId(payload.balanceDbId);
+  const idFields = ['databaseId', 'habitsDbId', 'goalsDbId', 'balanceDbId'];
+  for (const field of idFields) {
+    if (payload[field]) payload[field] = normalizeDatabaseId(payload[field]);
+  }
   resetNotionClient();
-  return setConfig(payload);
+  return store.setConfig(payload);
 });
 
 // =========================================================
@@ -136,8 +112,7 @@ ipcMain.handle('notion:test', async (_e, { notionToken, databaseId }) => {
     });
     return { ok: true, title: db.title?.[0]?.plain_text || 'Untitled Database' };
   } catch (err) {
-    const msg = err?.body ? JSON.parse(err.body)?.message : err.message;
-    throw new Error(msg || 'Could not connect. Check your token and database ID.');
+    throw toUserError(err, 'Could not connect. Check your token and database ID.');
   }
 });
 
@@ -145,57 +120,57 @@ ipcMain.handle('notion:test', async (_e, { notionToken, databaseId }) => {
 // IPC: trades
 // =========================================================
 
-ipcMain.handle('trades:getCached', () => getCachedTrades());
+ipcMain.handle('trades:getCached', () => store.getCachedTrades());
 
 ipcMain.handle('trades:sync', async () => {
-  const { client, databaseId } = requireNotion();
+  const { client, config } = requireNotionClient();
+  const databaseId = requireDatabaseId(config, 'databaseId', 'Trading Tracker DB');
+
   try {
-    const pages = await queryAll(client, databaseId, {
-      sorts: [{ property: 'Date', direction: 'descending' }],
+    const trades = await syncCollection({
+      client,
+      databaseId,
+      mapPage: notionPageToTrade,
+      queryOptions: { sorts: [{ property: 'Date', direction: 'descending' }] },
+      logLabel: 'trades:sync',
     });
-    const trades = pages.flatMap(page => {
-      try { return [notionPageToTrade(page)]; }
-      catch (e) { console.warn('[trades:sync] Skipped page', page.id, e.message); return []; }
-    });
-    setCachedTrades(trades);
     const lastSyncedAt = new Date().toISOString();
-    setLastSyncedAt(lastSyncedAt);
+    store.setCachedTrades(trades);
+    store.setLastSyncedAt(lastSyncedAt);
     return { trades, lastSyncedAt };
   } catch (err) {
-    const body = err?.body ? JSON.parse(err.body) : null;
-    throw new Error(`Notion sync error: ${body?.message || err.message || 'Unknown'}`);
+    throw toUserError(err, 'Notion sync error.');
   }
 });
 
 ipcMain.handle('trades:create', async (_e, trade) => {
-  const { client, databaseId } = requireNotion();
+  const { client, config } = requireNotionClient();
+  const databaseId = requireDatabaseId(config, 'databaseId', 'Trading Tracker DB');
+
   const page = await client.pages.create({
     parent: { database_id: databaseId },
     properties: tradeToNotionProperties(trade),
   });
   const newTrade = notionPageToTrade(page);
-  const cached = getCachedTrades();
-  cached.unshift(newTrade);
-  setCachedTrades(cached);
+  store.setCachedTrades([newTrade, ...store.getCachedTrades()]);
   return newTrade;
 });
 
 ipcMain.handle('trades:update', async (_e, trade) => {
-  const { client } = requireNotion();
+  const { client } = requireNotionClient();
   const page = await client.pages.update({
     page_id: trade.id,
     properties: tradeToNotionProperties(trade),
   });
   const updated = notionPageToTrade(page);
-  const cached = getCachedTrades().map(t => t.id === updated.id ? updated : t);
-  setCachedTrades(cached);
+  store.setCachedTrades(store.getCachedTrades().map((t) => (t.id === updated.id ? updated : t)));
   return updated;
 });
 
 ipcMain.handle('trades:delete', async (_e, id) => {
-  const { client } = requireNotion();
+  const { client } = requireNotionClient();
   await client.pages.update({ page_id: id, archived: true });
-  setCachedTrades(getCachedTrades().filter(t => t.id !== id));
+  store.setCachedTrades(store.getCachedTrades().filter((t) => t.id !== id));
   return { ok: true };
 });
 
@@ -204,46 +179,47 @@ ipcMain.handle('trades:delete', async (_e, id) => {
 // =========================================================
 
 ipcMain.handle('habits:getCached', () => ({
-  entries: getCachedHabits(),
-  lastSyncedAt: getHabitsLastSyncedAt(),
+  entries: store.getCachedHabits(),
+  lastSyncedAt: store.getHabitsLastSyncedAt(),
 }));
 
 ipcMain.handle('habits:sync', async () => {
   const { client, config } = requireNotionClient();
-  const HABITS_DB_ID = normalizeDatabaseId(config.habitsDbId || '');
-  if (!HABITS_DB_ID) throw new Error('Habits DB not configured. Add it in Kernel settings.');
+  const databaseId = requireDatabaseId(config, 'habitsDbId', 'Habits DB');
 
-  const pages = await queryAll(client, HABITS_DB_ID, {
-    sorts: [{ property: 'Date', direction: 'descending' }],
+  const entries = await syncCollection({
+    client,
+    databaseId,
+    mapPage: notionPageToHabitEntry,
+    queryOptions: { sorts: [{ property: 'Date', direction: 'descending' }] },
+    logLabel: 'habits:sync',
   });
-  const entries = pages.flatMap(page => {
-    try { return [notionPageToHabitEntry(page)]; }
-    catch (e) { console.warn('[habits:sync] Skipped page', page.id, e.message); return []; }
-  });
-
-  setCachedHabits(entries);
   const lastSyncedAt = new Date().toISOString();
-  setHabitsLastSyncedAt(lastSyncedAt);
+  store.setCachedHabits(entries);
+  store.setHabitsLastSyncedAt(lastSyncedAt);
   return { entries, lastSyncedAt };
 });
 
 ipcMain.handle('habits:updateCheckbox', async (_e, { pageId, habitName, checked }) => {
   const { client } = requireNotionClient();
-  await client.pages.update({
+
+  // The Notion database owns "Progress" as a formula over the checkbox
+  // columns. The old code patched the checkbox, then hand-recomputed
+  // progress locally as a plain average — duplicating whatever logic
+  // the real Notion formula uses, and silently drifting from it if
+  // that formula is ever more than a flat average (weighted habits,
+  // excluded days, etc.). `pages.update` already returns the page with
+  // every property recalculated server-side, so we just re-map *that*
+  // through the same schema function sync uses — one source of truth
+  // for "what a habit entry looks like," no reimplemented math.
+  const page = await client.pages.update({
     page_id: pageId,
     properties: habitCheckboxPatch(habitName, checked),
   });
+  const updated = notionPageToHabitEntry(page);
 
-  // Update local cache — recalculate progress from checkboxes
-  const cached = getCachedHabits();
-  const entry = cached.find(e => e.id === pageId);
-  if (entry) {
-    entry[habitName] = checked;
-    const done = HABIT_PROPS.filter(p => entry[p]).length;
-    entry.progress = Math.round((done / HABIT_PROPS.length) * 100);
-    setCachedHabits(cached);
-  }
-  return { ok: true };
+  store.setCachedHabits(store.getCachedHabits().map((e) => (e.id === updated.id ? updated : e)));
+  return updated;
 });
 
 // =========================================================
@@ -251,24 +227,23 @@ ipcMain.handle('habits:updateCheckbox', async (_e, { pageId, habitName, checked 
 // =========================================================
 
 ipcMain.handle('goals:getCached', () => ({
-  goals: getCachedGoals(),
-  lastSyncedAt: getGoalsLastSyncedAt(),
+  goals: store.getCachedGoals(),
+  lastSyncedAt: store.getGoalsLastSyncedAt(),
 }));
 
 ipcMain.handle('goals:sync', async () => {
   const { client, config } = requireNotionClient();
-  const GOALS_DB_ID = normalizeDatabaseId(config.goalsDbId || '');
-  if (!GOALS_DB_ID) throw new Error('Saving Goals DB not configured. Add it in Kernel settings.');
+  const databaseId = requireDatabaseId(config, 'goalsDbId', 'Saving Goals DB');
 
-  const pages = await queryAll(client, GOALS_DB_ID);
-  const goals = pages.flatMap(page => {
-    try { return [notionPageToGoal(page)]; }
-    catch (e) { console.warn('[goals:sync] Skipped page', page.id, e.message); return []; }
+  const goals = await syncCollection({
+    client,
+    databaseId,
+    mapPage: notionPageToGoal,
+    logLabel: 'goals:sync',
   });
-
-  setCachedGoals(goals);
   const lastSyncedAt = new Date().toISOString();
-  setGoalsLastSyncedAt(lastSyncedAt);
+  store.setCachedGoals(goals);
+  store.setGoalsLastSyncedAt(lastSyncedAt);
   return { goals, lastSyncedAt };
 });
 
@@ -279,8 +254,7 @@ ipcMain.handle('goals:update', async (_e, { id, saved, earned }) => {
     properties: goalToNotionProperties({ saved, earned }),
   });
   const updated = notionPageToGoal(page);
-  const cached = getCachedGoals().map(g => g.id === updated.id ? updated : g);
-  setCachedGoals(cached);
+  store.setCachedGoals(store.getCachedGoals().map((g) => (g.id === updated.id ? updated : g)));
   return updated;
 });
 
@@ -289,35 +263,32 @@ ipcMain.handle('goals:update', async (_e, { id, saved, earned }) => {
 // =========================================================
 
 ipcMain.handle('balance:getCached', () => ({
-  balance:     getCachedBalance(),
-  history:     getCachedBalanceHistory(),
-  lastSyncedAt: getBalanceLastSyncedAt(),
+  balance: store.getCachedBalance(),
+  history: store.getCachedBalanceHistory(),
+  lastSyncedAt: store.getBalanceLastSyncedAt(),
 }));
 
 ipcMain.handle('balance:sync', async () => {
   const { client, config } = requireNotionClient();
-  const BALANCE_DB_ID = normalizeDatabaseId(config.balanceDbId || '');
-  if (!BALANCE_DB_ID) throw new Error('Balance DB not configured. Add it in Kernel settings.');
+  const databaseId = requireDatabaseId(config, 'balanceDbId', 'Account Balance DB');
 
-  const pages = await queryAll(client, BALANCE_DB_ID, {
-    sorts: [{ property: 'Date', direction: 'descending' }],
+  const allEntries = await syncCollection({
+    client,
+    databaseId,
+    mapPage: notionPageToBalance,
+    queryOptions: { sorts: [{ property: 'Date', direction: 'descending' }] },
+    logLabel: 'balance:sync',
   });
-  const entries = pages.flatMap(page => {
-    try {
-      const entry = notionPageToBalance(page);
-      return entry.balance !== null ? [entry] : [];
-    } catch (e) {
-      console.warn('[balance:sync] Skipped page', page.id, e.message);
-      return [];
-    }
-  });
+  // Rows with no End Balance value aren't a real week entry yet — keep
+  // them out of history rather than letting every consumer re-filter.
+  const entries = allEntries.filter((entry) => entry.balance !== null);
 
   const latest = entries[0]?.balance ?? null;
   const lastSyncedAt = new Date().toISOString();
 
-  setCachedBalance(latest);
-  setCachedBalanceHistory(entries);
-  setBalanceLastSyncedAt(lastSyncedAt);
+  store.setCachedBalance(latest);
+  store.setCachedBalanceHistory(entries);
+  store.setBalanceLastSyncedAt(lastSyncedAt);
 
   return { balance: latest, history: entries, lastSyncedAt };
 });
@@ -333,5 +304,5 @@ ipcMain.handle('shell:openExternal', (_e, url) => {
 });
 
 ipcMain.on('window-minimize', () => mainWindow?.minimize());
-ipcMain.on('window-maximize', () => mainWindow?.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize());
-ipcMain.on('window-close',    () => mainWindow?.close());
+ipcMain.on('window-maximize', () => (mainWindow?.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize()));
+ipcMain.on('window-close', () => mainWindow?.close());

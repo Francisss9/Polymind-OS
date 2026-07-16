@@ -175,13 +175,30 @@ async function saveTrade(e) {
 }
 
 async function deleteTrade(id) {
-  if (!confirm('Archive this trade in Notion?')) return;
+  // Use a data attribute on the button to require double-click confirmation
+  const btn = document.querySelector(`[data-delete="${id}"]`);
+  if (!btn) return;
+  if (btn.dataset.confirm !== 'pending') {
+    btn.dataset.confirm = 'pending';
+    btn.textContent = 'Sure?';
+    setTimeout(() => {
+      if (btn.dataset.confirm === 'pending') {
+        btn.dataset.confirm = '';
+        btn.textContent = 'Del';
+      }
+    }, 2500);
+    return;
+  }
+  btn.disabled = true;
   try {
     await window.polymind.trades.delete(id);
     trades = trades.filter((t) => t.id !== id);
     applyFilter($('#trades-search').value);
   } catch (err) {
     console.error('[trades] Delete failed:', err.message);
-    alert(err.message || 'Delete failed');
+    showBanner($('#sync-error-bar'), err.message || 'Delete failed');
+    btn.disabled = false;
+    btn.dataset.confirm = '';
+    btn.textContent = 'Del';
   }
 }

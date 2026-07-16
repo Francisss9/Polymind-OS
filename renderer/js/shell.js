@@ -285,7 +285,19 @@ async function handleSettingsTest() {
 }
 
 function handleDisconnect() {
-  if (!confirm('Disconnect Notion? Local cache kept.')) return;
+  const btn = document.getElementById('btn-disconnect');
+  if (!btn) return;
+  if (btn.dataset.confirm !== 'pending') {
+    btn.dataset.confirm = 'pending';
+    btn.textContent = 'Sure? Click again';
+    setTimeout(() => {
+      if (btn.dataset.confirm === 'pending') {
+        btn.dataset.confirm = '';
+        btn.textContent = 'Disconnect Notion';
+      }
+    }, 3000);
+    return;
+  }
   window.polymind.config.set({ setupComplete: false, notionToken: '', databaseId: '' });
   showGate('notion');
 }

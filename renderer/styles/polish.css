@@ -1,0 +1,176 @@
+/* =========================================================
+   POLISH.CSS — fluid micro-interactions layer
+   Additive only: does not change existing selectors' base
+   rules, only layers in motion. Safe to remove by deleting
+   the <link> in index.html.
+   ========================================================= */
+
+/* ---- 1. Nav rail: liquid active indicator + magnetic icons ---- */
+
+.nav-item {
+  position: relative;
+  will-change: transform;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    transform 0.35s var(--spring);
+}
+.nav-item:hover {
+  transform: translateX(2px) scale(1.04);
+}
+.nav-item:active {
+  transform: scale(0.92);
+  transition: transform 0.12s var(--ease-in);
+}
+.nav-item.active {
+  animation: nav-pop 0.4s var(--snap) both;
+}
+@keyframes nav-pop {
+  0%   { transform: scale(0.85); }
+  55%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* ---- 2. Buttons: ripple + press feedback (JS toggles .rippling) ---- */
+
+.btn, .btn-primary, .btn-connect, .btn-outline, .widget-sync-btn, .tb-btn {
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0);
+  transition: background 0.15s, border-color 0.15s, color 0.15s,
+              transform 0.18s var(--spring), box-shadow 0.25s var(--spring);
+}
+.btn:active, .btn-primary:active, .btn-connect:active, .btn-outline:active {
+  transform: scale(0.96);
+}
+.btn-primary:hover {
+  box-shadow: 0 4px 18px rgba(255,255,255,0.08);
+  transform: translateY(-1px);
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.28);
+  transform: scale(0);
+  pointer-events: none;
+  animation: ripple-out 0.55s var(--spring) forwards;
+}
+@keyframes ripple-out {
+  to { transform: scale(2.6); opacity: 0; }
+}
+
+/* sync button spin-on-click, arrests cleanly instead of snapping */
+#btn-sync.is-syncing, .widget-sync-btn.is-syncing {
+  animation: sync-spin 0.9s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+}
+@keyframes sync-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---- 3. Cards: soft lift on hover ---- */
+
+.stat-card, .chart-card, .home-widget {
+  position: relative;
+  isolation: isolate;
+  transition: transform 0.35s var(--spring), box-shadow 0.35s var(--spring), border-color 0.3s;
+}
+.stat-card:hover, .chart-card:hover, .home-widget:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px -12px rgba(0,0,0,0.55);
+}
+
+/* ---- 4. Staggered entrance for lists (JS adds .stagger-in to a
+   container; children fade/rise in sequence via nth-child delay) ---- */
+
+.stagger-in > * {
+  animation: stagger-item 0.42s var(--spring) both;
+}
+.stagger-in > *:nth-child(1)  { animation-delay: 0.02s; }
+.stagger-in > *:nth-child(2)  { animation-delay: 0.05s; }
+.stagger-in > *:nth-child(3)  { animation-delay: 0.08s; }
+.stagger-in > *:nth-child(4)  { animation-delay: 0.11s; }
+.stagger-in > *:nth-child(5)  { animation-delay: 0.14s; }
+.stagger-in > *:nth-child(6)  { animation-delay: 0.17s; }
+.stagger-in > *:nth-child(7)  { animation-delay: 0.20s; }
+.stagger-in > *:nth-child(8)  { animation-delay: 0.23s; }
+.stagger-in > *:nth-child(n+9){ animation-delay: 0.26s; }
+@keyframes stagger-item {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---- 5. View transitions: crossfade instead of hard cut, and an
+   exit animation so switching views never pops ---- */
+
+.view.leaving {
+  animation: view-out 0.22s var(--ease-in) both;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+@keyframes view-out {
+  to { opacity: 0; transform: translateY(-6px) scale(0.995); }
+}
+
+/* ---- 6. Numbers: subtle pulse when a value updates (JS toggles
+   .value-pulse briefly after animateNumber runs) ---- */
+
+.value-pulse {
+  animation: value-pulse 0.5s var(--spring);
+}
+@keyframes value-pulse {
+  0%   { color: var(--text); }
+  35%  { color: #fff; text-shadow: 0 0 12px rgba(255,255,255,0.35); }
+  100% { color: var(--text); text-shadow: none; }
+}
+
+/* ---- 7. Trade table rows: satisfying hover slide + checkbox morph ---- */
+
+table.trades tbody tr {
+  transition: background 0.15s, transform 0.2s var(--spring);
+}
+table.trades tbody tr:hover {
+  transform: translateX(2px);
+}
+
+.habit-check {
+  transition: background 0.25s var(--snap), border-color 0.2s, transform 0.2s var(--snap);
+}
+.habit-check:active {
+  transform: scale(0.85);
+}
+.habit-check.checked {
+  animation: check-pop 0.35s var(--snap);
+}
+@keyframes check-pop {
+  0%   { transform: scale(0.7); }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* ---- 8. Banners / toasts: spring slide-in instead of instant show ---- */
+
+.error-banner:not(.hidden), .success-banner:not(.hidden) {
+  animation: banner-in 0.35s var(--spring) both;
+}
+@keyframes banner-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- 9. Modal backdrop: gentle blur-in ---- */
+
+.modal-backdrop {
+  transition: backdrop-filter 0.3s ease;
+}
+
+/* ---- 10. Respect reduced motion ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

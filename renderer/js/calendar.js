@@ -3,18 +3,19 @@
 // =========================================================
 // CALENDAR VIEW
 // =========================================================
+// Shared helpers: toISODate, todayISO, MONTHS_SHORT — from utils.js
 
 let calPeriod = 'daily';
-let calOffset = 0; // nav offset (e.g. week index, month index, etc.)
+let calOffset = 0;
 
 // ---- Helpers ----
 
-function isoDate(d) { const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), dy=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${dy}`; }
+function isoDate(d) { return toISODate(d); } // alias for backwards compat
 
 function startOfWeek(d) {
   const c = new Date(d);
-  const day = c.getDay(); // 0=Sun
-  const diff = day === 0 ? -6 : 1 - day; // Mon start
+  const day = c.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
   c.setDate(c.getDate() + diff);
   c.setHours(0,0,0,0);
   return c;
@@ -30,10 +31,7 @@ function fmtShort(d) {
   return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
 }
 
-function fmtPnl(v) {
-  if (typeof v !== 'number') return '—';
-  return (v > 0 ? '+' : '') + v.toFixed(2);
-}
+function fmtPnl(v) { return formatPnl(v); } // alias → utils.js formatPnl
 
 function pnlClass(v) { return v > 0 ? 'pos' : v < 0 ? 'neg' : ''; }
 
@@ -264,7 +262,7 @@ function renderMonthly() {
   if (titleEl) titleEl.textContent = String(year);
 
   const byDate = tradesByDate(trades);
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const MONTHS = MONTHS_SHORT;
 
   let html = '<div class="cal-monthly">';
   for (let m = 0; m < 12; m++) {
@@ -308,7 +306,7 @@ function renderQuarterly() {
   if (titleEl) titleEl.textContent = String(year);
 
   const byDate = tradesByDate(trades);
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const MONTHS = MONTHS_SHORT;
   const QUARTERS = [
     { name:'Q1', months:[0,1,2] },
     { name:'Q2', months:[3,4,5] },

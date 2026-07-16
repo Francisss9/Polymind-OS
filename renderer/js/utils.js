@@ -3,8 +3,25 @@
 // =========================================================
 // RENDERER UTILITIES
 // Pure functions — no DOM, no state, no side effects.
-// Used by app.js, calendar.js, charts.js
+// Used by app.js, home.js, calendar.js, charts.js, trades.js
 // =========================================================
+
+/** Month abbreviations — single source of truth */
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+/**
+ * Format a Date object to YYYY-MM-DD ISO string.
+ * Safer than toISOString() which uses UTC — this uses local time.
+ */
+function toISODate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dy = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dy}`;
+}
+
+/** Today as YYYY-MM-DD in local time */
+function todayISO() { return toISODate(new Date()); }
 
 /**
  * Format a P&L number with sign prefix.
