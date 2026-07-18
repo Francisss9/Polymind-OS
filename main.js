@@ -91,7 +91,7 @@ ipcMain.handle('config:get', () => ({
 }));
 
 ipcMain.handle('config:set', (_e, payload) => {
-  const idFields = ['databaseId', 'habitsDbId', 'goalsDbId', 'balanceDbId'];
+  const idFields = ['databaseId', 'habitsDbId', 'goalsDbId', 'balanceDbId', 'notesDbId'];
   for (const field of idFields) {
     if (payload[field]) payload[field] = normalizeDatabaseId(payload[field]);
   }
@@ -296,6 +296,93 @@ ipcMain.handle('balance:sync', async () => {
 // =========================================================
 // IPC: shell + window controls
 // =========================================================
+
+// =========================================================
+// IPC: Notes
+// =========================================================
+
+ipcMain.handle('notes:getCached', () => ({
+  notes: store.getCachedNotes(),
+  syncedAt: store.getNotesLastSyncedAt(),
+}));
+
+ipcMain.handle('notes:sync', async () => {
+  const { notionToken, notesDbId } = store.getConfig();
+  if (!notionToken || !notesDbId) throw new Error('Notes DB not configured.');
+  const { Client } = require('@notionhq/client');
+  const { queryAllPages } = require('./kernel/notion-sync');
+  const client = new Client({ auth: notionToken });
+  const rows = await queryAllPages(client, notesDbId);
+  const notes = rows.map((page) => {
+    const p = page.properties;
+    const title   = p['Title']?.title?.[0]?.plain_text || p['Name']?.title?.[0]?.plain_text || 'Untitled';
+    const content = p['Content']?.rich_text?.map((r) => r.plain_text).join('') || '';
+    const tags    = p['Tags']?.multi_select?.map((t) => t.name) || [];
+    const pinned  = p['Pinned']?.checkbox || false;
+    return { id: page.id, title, content, tags, pinned, updatedAt: page.last_edited_time };
+  });
+  notes.sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return new Date(b.updatedAt) - new Date(a.updatedAt);
+  });
+  store.setCachedNotes(notes);
+  store.setNotesLastSyncedAt(new Date().toISOString());
+  return { notes, syncedAt: store.getNotesLastSyncedAt() };
+});
+
+ipcMain.handle('notes:create', async (_e, { title, content, tags }) => {
+  const { notionToken, notesDbId } = store.getConfig();
+  if (!notionToken || !notesDbId) throw new Error('Notes DB not configured.');
+  const { Client } = require('@notionhq/client');
+  const client = new Client({ auth: notionToken });
+  const page = await client.pages.create({
+    parent: { database_id: notesDbId },
+    properties: {
+      Title:   { title:      [{ text: { content: title || 'Untitled' } }] },
+      Content: { rich_text:  [{ text: { content: content || '' } }] },
+      Tags:    { multi_select: (tags || []).map((name) => ({ name })) },
+      Pinned:  { checkbox: false },
+    },
+  });
+  const note = { id: page.id, title: title || 'Untitled', content: content || '', tags: tags || [], pinned: false, updatedAt: page.last_edited_time };
+  store.setCachedNotes([note, ...store.getCachedNotes()]);
+  return note;
+});
+
+ipcMain.handle('notes:update', async (_e, { id, title, content, tags, pinned }) => {
+  const { notionToken } = store.getConfig();
+  if (!notionToken) throw new Error('Not connected to Notion.');
+  const { Client } = require('@notionhq/client');
+  const client = new Client({ auth: notionToken });
+  const props = {};
+  if (title   !== undefined) props.Title   = { title:     [{ text: { content: title } }] };
+  if (content !== undefined) props.Content = { rich_text: [{ text: { content } }] };
+  if (tags    !== undefined) props.Tags    = { multi_select: tags.map((name) => ({ name })) };
+  if (pinned  !== undefined) props.Pinned  = { checkbox: pinned };
+  const page = await client.pages.update({ page_id: id, properties: props });
+  const cached = store.getCachedNotes().map((n) =>
+    n.id !== id ? n : {
+      ...n,
+      ...(title   !== undefined && { title }),
+      ...(content !== undefined && { content }),
+      ...(tags    !== undefined && { tags }),
+      ...(pinned  !== undefined && { pinned }),
+      updatedAt: page.last_edited_time,
+    }
+  );
+  store.setCachedNotes(cached);
+  return { id, updatedAt: page.last_edited_time };
+});
+
+ipcMain.handle('notes:delete', async (_e, id) => {
+  const { notionToken } = store.getConfig();
+  if (!notionToken) throw new Error('Not connected to Notion.');
+  const { Client } = require('@notionhq/client');
+  const client = new Client({ auth: notionToken });
+  await client.pages.update({ page_id: id, archived: true });
+  store.setCachedNotes(store.getCachedNotes().filter((n) => n.id !== id));
+  return { id };
+});
 
 ipcMain.handle('shell:openExternal', (_e, url) => {
   if (typeof url === 'string' && /^https?:\/\//.test(url)) {

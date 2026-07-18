@@ -8,7 +8,7 @@
 
 .view-home {
   padding: 0 !important;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .home-grid {

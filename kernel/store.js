@@ -25,16 +25,18 @@ function createPolymindStore(backingStore) {
       habitsDbId:   backingStore.get('habitsDbId', ''),
       goalsDbId:    backingStore.get('goalsDbId', ''),
       balanceDbId:  backingStore.get('balanceDbId', ''),
+      notesDbId:    backingStore.get('notesDbId', ''),
       setupComplete: backingStore.get('setupComplete', false),
     };
   }
 
-  function setConfig({ notionToken, databaseId, habitsDbId, goalsDbId, balanceDbId, setupComplete }) {
+  function setConfig({ notionToken, databaseId, habitsDbId, goalsDbId, balanceDbId, notesDbId, setupComplete }) {
     if (notionToken   !== undefined) backingStore.set('notionToken', notionToken);
     if (databaseId    !== undefined) backingStore.set('databaseId', databaseId);
     if (habitsDbId    !== undefined) backingStore.set('habitsDbId', habitsDbId);
     if (goalsDbId     !== undefined) backingStore.set('goalsDbId', goalsDbId);
     if (balanceDbId   !== undefined) backingStore.set('balanceDbId', balanceDbId);
+    if (notesDbId     !== undefined) backingStore.set('notesDbId', notesDbId);
     if (setupComplete !== undefined) backingStore.set('setupComplete', setupComplete);
     return getConfig();
   }
@@ -61,6 +63,7 @@ function createPolymindStore(backingStore) {
   const goals          = defineCachedResource('savingGoals', 'goalsLastSyncedAt', []);
   const balance        = defineCachedResource('balance', 'balanceLastSyncedAt', null);
   const balanceHistory = defineCachedResource('balanceHistory', 'balanceLastSyncedAt', []); // shares balance's sync timestamp
+  const notes          = defineCachedResource('notes', 'notesLastSyncedAt', []);
 
   return {
     getConfig, setConfig,
@@ -77,6 +80,9 @@ function createPolymindStore(backingStore) {
     getCachedBalance: balance.get,             setCachedBalance: balance.set,
     getBalanceLastSyncedAt: balance.getSyncedAt, setBalanceLastSyncedAt: balance.setSyncedAt,
     getCachedBalanceHistory: balanceHistory.get, setCachedBalanceHistory: balanceHistory.set,
+
+    getCachedNotes: notes.get,                 setCachedNotes: notes.set,
+    getNotesLastSyncedAt: notes.getSyncedAt,   setNotesLastSyncedAt: notes.setSyncedAt,
   };
 }
 

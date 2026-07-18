@@ -30,6 +30,13 @@ contextBridge.exposeInMainWorld('polymind', {
     getCached: () => ipcRenderer.invoke('balance:getCached'),
     sync:      () => ipcRenderer.invoke('balance:sync'),
   },
+  notes: {
+    getCached: ()     => ipcRenderer.invoke('notes:getCached'),
+    sync:      ()     => ipcRenderer.invoke('notes:sync'),
+    create:    (note) => ipcRenderer.invoke('notes:create', note),
+    update:    (note) => ipcRenderer.invoke('notes:update', note),
+    delete:    (id)   => ipcRenderer.invoke('notes:delete', id),
+  },
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
   window: {
     minimize: () => ipcRenderer.send('window-minimize'),

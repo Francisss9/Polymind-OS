@@ -42,7 +42,7 @@ function _hash(data) {
 }
 
 function showView(name) {
-  ['home', 'dashboard', 'charts', 'settings'].forEach((v) => {
+  ['home', 'dashboard', 'charts', 'notes', 'settings'].forEach((v) => {
     const el = $(`#view-${v}`);
     if (!el) return;
     el.classList.toggle('hidden', v !== name);
@@ -58,6 +58,7 @@ function showView(name) {
     $('#settings-habits-db').value = config.habitsDbId  || '';
     $('#settings-goals-db').value  = config.goalsDbId   || '';
     $('#settings-balance-db').value= config.balanceDbId || '';
+    $('#settings-notes-db').value  = config.notesDbId   || '';
     $('#settings-token').value = '';
     clearBanners($('#settings-error'), $('#settings-success'));
   }
@@ -77,7 +78,7 @@ function showView(name) {
     }
   }
 
-  const titles = { home: 'WorkStation', dashboard: 'Trading', charts: 'Charts', settings: 'Kernel' };
+  const titles = { home: 'WorkStation', dashboard: 'Trading', charts: 'Charts', notes: 'Notes', settings: 'Kernel' };
   $$('.nav-item').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === name));
   $('#view-title').textContent = titles[name] || name;
   currentView = name;
@@ -157,6 +158,28 @@ async function loadCachedBalance() {
   }
 }
 
+// ---- Boot sync ----------------------------------------------
+// Called once after login/auto-login.
+// 1. Load all caches instantly (no network).
+// 2. Fire all configured DB syncs in parallel, silently skipping
+//    any DB that isn't configured yet. Never crashes the app.
+
+async function bootSync() {
+  await loadCached();
+  await loadCachedBalance();
+
+  const cfg = await window.polymind.config.get();
+  const syncs = [];
+
+  if (cfg.databaseId)  syncs.push(syncTrades().catch((e)  => console.warn('[boot] trades:', e.message)));
+  if (cfg.balanceDbId) syncs.push(syncBalance().catch((e)  => console.warn('[boot] balance:', e.message)));
+  if (cfg.habitsDbId)  syncs.push(window.polymind.habits.sync().catch((e)  => console.warn('[boot] habits:', e.message)));
+  if (cfg.goalsDbId)   syncs.push(window.polymind.goals.sync().catch((e)   => console.warn('[boot] goals:', e.message)));
+  if (cfg.notesDbId)   syncs.push(window.polymind.notes.sync().catch((e)   => console.warn('[boot] notes:', e.message)));
+
+  await Promise.allSettled(syncs);
+}
+
 async function syncBalance() {
   const btn = document.getElementById('btn-balance-sync');
   if (btn) btn.disabled = true;
@@ -197,15 +220,14 @@ async function handleLogin() {
       showBanner($('#login-error'), 'Incorrect email or password.');
       return;
     }
+    setSession();
     config = await window.polymind.config.get();
     if (!config.setupComplete || !config.notionToken || !config.databaseId) {
       showStep('notion');
     } else {
       showApp();
-      await loadCached();
-      await loadCachedBalance();
-      updateSyncStatus(config.lastSyncedAt);
       showView('home');
+      bootSync(); // fire-and-forget: UI appears instantly, syncs run in background
     }
   } finally {
     $('#login-spinner').classList.add('hidden');
@@ -257,6 +279,7 @@ async function handleSettingsSave() {
     habitsDbId:  $('#settings-habits-db').value.trim(),
     goalsDbId:   $('#settings-goals-db').value.trim(),
     balanceDbId: $('#settings-balance-db').value.trim(),
+    notesDbId:   $('#settings-notes-db').value.trim(),
   };
   const token = $('#settings-token').value.trim();
   if (token) payload.notionToken = token;
@@ -300,6 +323,11 @@ function handleDisconnect() {
   }
   window.polymind.config.set({ setupComplete: false, notionToken: '', databaseId: '' });
   showGate('notion');
+}
+
+function handleLogout() {
+  clearSession();
+  showGate('login');
 }
 
 // ---- Helpers ------------------------------------------------
@@ -376,7 +404,10 @@ function bindEvents() {
   // Settings
   $('#btn-settings-save').addEventListener('click', handleSettingsSave);
   $('#btn-settings-test').addEventListener('click', handleSettingsTest);
-  $('#btn-disconnect').addEventListener('click',    handleDisconnect);
+  $('#btn-disconnect').addEventListener('click', handleDisconnect);
+
+  const logoutBtn = $('#btn-logout');
+  if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
 
   // Search
   $('#trades-search').addEventListener('input', (e) => applyFilter(e.target.value));
@@ -395,13 +426,23 @@ function bindEvents() {
 // ---- Init ---------------------------------------------------
 
 async function init() {
-  // Set login background image
   const artBg = document.getElementById('gate-art-bg');
   if (artBg) artBg.style.backgroundImage = "url('assets/login-bg.jpg')";
 
   if (typeof initHome === 'function') initHome();
+  if (typeof Notes !== 'undefined') Notes.init();
   bindEvents();
+
   config = await window.polymind.config.get();
+
+  // Auto-login: if a session exists and setup is complete, skip the gate entirely
+  if (hasActiveSession() && config.setupComplete && config.notionToken && config.databaseId) {
+    showApp();
+    showView('home');
+    bootSync(); // fire-and-forget
+    return;
+  }
+
   updateSyncStatus(config.lastSyncedAt);
   showGate('login');
 }

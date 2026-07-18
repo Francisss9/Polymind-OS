@@ -25,10 +25,10 @@ const NOTION_INTEGRATIONS_URL = 'https://www.notion.so/my-integrations';
 // Reset: DevTools → Application → localStorage → delete "polymind_auth"
 // Why btoa? Light obfuscation — sufficient for a personal desktop tool.
 
-const AUTH_KEY = 'polymind_auth';
+const AUTH_KEY    = 'polymind_auth';
+const SESSION_KEY = 'polymind_session';
 
 function getLocalAuth() {
-  // Silent catch intentional — corrupted localStorage returns null = treated as first run
   try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch { return null; }
 }
 function setLocalAuth(email, password) {
@@ -40,6 +40,27 @@ function verifyLocalAuth(email, password) {
   return s ? s.encoded === btoa(`${email}:${password}`) : false;
 }
 function isFirstRun() { return !getLocalAuth(); }
+
+// =========================================================
+// SESSION
+// =========================================================
+// Written on successful login. Checked on app start to skip
+// the gate entirely. Cleared on logout or auth reset.
+// Not a security token — this is a personal desktop tool.
+// The session just means "this machine already authenticated."
+
+function setSession() {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ ts: Date.now() }));
+}
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
+function hasActiveSession() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SESSION_KEY));
+    return !!s && !!s.ts;
+  } catch { return false; }
+}
 
 // =========================================================
 // SHARED STATE

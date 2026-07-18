@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="styles/trading.css" />
   <link rel="stylesheet" href="styles/modal.css" />
   <link rel="stylesheet" href="styles/home.css" />
+  <link rel="stylesheet" href="styles/notes.css" />
   <link rel="stylesheet" href="styles/polish.css" />
 </head>
 <body>
@@ -208,6 +209,15 @@
 
         <div class="nav-divider"></div>
 
+        <button class="nav-item" data-view="notes" data-tip="Notes">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+            <rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M5 6h6M5 9h6M5 12h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+        </button>
+
+        <div class="nav-divider"></div>
+
         <button class="nav-item" data-view="settings" data-tip="Kernel">
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
             <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.2"/>
@@ -217,6 +227,11 @@
       </nav>
 
       <div class="sidebar-foot">
+        <button class="nav-item nav-logout" id="btn-logout" data-tip="Log out" title="Log out">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M6 2H2v12h4M11 11l3-3-3-3M14 8H6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
         <span class="kernel-dot"></span>
         <span id="sidebar-notion-label">Notion linked</span>
       </div>
@@ -562,6 +577,9 @@
           </div>
         </section>
 
+        <!-- Notes -->
+        <section id="view-notes" class="hidden"></section>
+
         <!-- Settings / Kernel -->
         <section id="view-settings" class="hidden settings-section">
           <p class="settings-lead">Credentials are stored locally and never committed.</p>
@@ -586,6 +604,10 @@
           <div class="form-group">
             <label for="settings-balance-db">Account Balance — Database ID or URL</label>
             <input id="settings-balance-db" type="text" placeholder="Paste ID or full Notion URL" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label for="settings-notes-db">Notes — Database ID or URL</label>
+            <input id="settings-notes-db" type="text" placeholder="Paste ID or full Notion URL" autocomplete="off" />
           </div>
           <div style="display:flex;gap:8px;margin-top:4px;">
             <button type="button" class="btn btn-primary" id="btn-settings-save">Save</button>
@@ -688,6 +710,7 @@
   <script src="js/calendar.js"></script>
   <script src="js/charts.js"></script>
   <script src="js/trades.js"></script>
+  <script src="js/notes.js"></script>
   <script src="js/shell.js"></script>
   <script src="js/polish.js"></script>
 </body>

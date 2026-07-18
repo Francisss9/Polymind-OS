@@ -23,8 +23,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* ── Scrollbar ─────────────────────────────────────── */
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--rim); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+::-webkit-scrollbar-thumb { background: transparent; border-radius: 2px; transition: background 0.2s; }
+::-webkit-scrollbar-thumb:hover { background: var(--rim); }
+
+/* Show scrollbar thumb when parent is hovered */
+*:hover::-webkit-scrollbar-thumb { background: var(--rim); }
 
 /* ── Spinner ─────────────────────────────────────── */
 .spinner {
