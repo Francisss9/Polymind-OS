@@ -23,9 +23,9 @@
 
   /* ── Text ─────────────────────────────────────────── */
   --text:         #ececec;
-  --text-muted:   #5c5e65;
-  --text-faint:   #2a2b2e;
-  --text-dim:     #323437;
+  --text-muted:   #9b9ea6;
+  --text-faint:   #3a3c40;
+  --text-dim:     #44474d;
   --text-inverse: #07080a;
 
   /* ── Accent (pure white, minimal use) ─────────────── */

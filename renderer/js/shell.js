@@ -387,7 +387,7 @@ function bindEvents() {
   $$('.nav-item').forEach((btn) => btn.addEventListener('click', () => showView(btn.dataset.view)));
 
   // Topbar
-  $('#btn-sync').addEventListener('click',      () => syncTrades());
+  $('#btn-sync').addEventListener('click', () => bootSync());
   $('#btn-new-trade').addEventListener('click', () => openTradeModal());
 
   // Balance / Charts

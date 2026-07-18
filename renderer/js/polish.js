@@ -10,7 +10,7 @@
 (function () {
   // ---- Ripple on any .btn / button click ----
   document.addEventListener('pointerdown', (e) => {
-    const btn = e.target.closest('.btn, .btn-primary, .btn-connect, .btn-outline, .widget-sync-btn, .tb-btn, .nav-item');
+    const btn = e.target.closest('.btn, .btn-primary, .btn-connect, .btn-outline, .widget-sync-btn, .tb-btn');
     if (!btn) return;
     const rect = btn.getBoundingClientRect();
     const size = Math.max(rect.width, rect.height) * 1.4;

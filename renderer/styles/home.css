@@ -18,7 +18,6 @@
   padding: 0;
   align-items: start;
   background: var(--border-subtle);
-  min-height: calc(100vh - var(--header-height));
 }
 
 .home-col {
@@ -26,6 +25,7 @@
   flex-direction: column;
   gap: 1px;
   background: var(--border-subtle);
+  min-width: 0;
 }
 
 /* ── Widget base ─────────────────────────────────────── */
