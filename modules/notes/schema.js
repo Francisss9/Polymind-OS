@@ -4,10 +4,8 @@ function notionPageToNote(page) {
   const props = page.properties;
   return {
     id: page.id,
-    title: props.Title?.title?.[0]?.plain_text
-      || props.Name?.title?.[0]?.plain_text
-      || 'Untitled',
-    content: props.Content?.rich_text?.map((r) => r.plain_text).join('') || '',
+    title: props.Name?.title?.[0]?.plain_text || 'Untitled',
+    content: props.Body?.rich_text?.map((r) => r.plain_text).join('') || '',
     tags: props.Tags?.multi_select?.map((t) => t.name) || [],
     pinned: props.Pinned?.checkbox || false,
     updatedAt: page.last_edited_time,
@@ -16,8 +14,8 @@ function notionPageToNote(page) {
 
 function noteToNotionProperties(note) {
   const props = {};
-  if (note.title   !== undefined) props.Title   = { title:     [{ text: { content: note.title } }] };
-  if (note.content !== undefined) props.Content = { rich_text: [{ text: { content: note.content } }] };
+  if (note.title   !== undefined) props.Name    = { title:     [{ text: { content: note.title } }] };
+  if (note.content !== undefined) props.Body    = { rich_text: [{ text: { content: note.content } }] };
   if (note.tags    !== undefined) props.Tags    = { multi_select: note.tags.map((name) => ({ name })) };
   if (note.pinned  !== undefined) props.Pinned  = { checkbox: note.pinned };
   return props;
