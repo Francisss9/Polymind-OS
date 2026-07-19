@@ -1,5 +1,18 @@
 'use strict';
 
+// Windows Squirrel installer fires the app briefly on install/uninstall/
+// update to create or remove desktop shortcuts. The package itself spawns
+// Update.exe detached and calls app.quit() asynchronously once that
+// finishes — so we must NOT force-exit here (process.exit would kill the
+// process before the shortcut creation/removal completes). A bare
+// top-level return is valid in a Node CommonJS module and simply stops
+// this file from continuing to create windows/register IPC handlers,
+// letting the package's own quit timing play out. forge.config.js
+// already has maker-squirrel configured for Windows builds.
+if (require('electron-squirrel-startup')) {
+  return;
+}
+
 const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const { getNotionClient, resetNotionClient } = require('./kernel/notion-client');
