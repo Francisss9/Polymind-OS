@@ -21,6 +21,7 @@ function createPolymindStore(backingStore) {
   function getConfig() {
     return {
       notionToken:  backingStore.get('notionToken', ''),
+      displayName:  backingStore.get('displayName', ''),
       databaseId:   backingStore.get('databaseId', ''),
       habitsDbId:   backingStore.get('habitsDbId', ''),
       goalsDbId:    backingStore.get('goalsDbId', ''),
@@ -30,8 +31,9 @@ function createPolymindStore(backingStore) {
     };
   }
 
-  function setConfig({ notionToken, databaseId, habitsDbId, goalsDbId, balanceDbId, notesDbId, setupComplete }) {
+  function setConfig({ notionToken, displayName, databaseId, habitsDbId, goalsDbId, balanceDbId, notesDbId, setupComplete }) {
     if (notionToken   !== undefined) backingStore.set('notionToken', notionToken);
+    if (displayName   !== undefined) backingStore.set('displayName', displayName);
     if (databaseId    !== undefined) backingStore.set('databaseId', databaseId);
     if (habitsDbId    !== undefined) backingStore.set('habitsDbId', habitsDbId);
     if (goalsDbId     !== undefined) backingStore.set('goalsDbId', goalsDbId);
@@ -96,7 +98,23 @@ function createPolymindStore(backingStore) {
 let lazyInstance = null;
 function getDefaultStore() {
   if (!lazyInstance) {
-    lazyInstance = createPolymindStore(new Store({ name: 'polymind-os' }));
+    // require()'d lazily, and only here — this is the one path in the
+    // whole kernel/ layer that ever runs inside real Electron, never
+    // inside the plain-Node test process (tests always call
+    // createPolymindStore(fakeStore) directly, see store.test.js).
+    const { wrapWithEncryption } = require('./secure-store');
+    const { createElectronCipher } = require('./electron-cipher');
+
+    const raw = new Store({ name: 'polymind-os' });
+    const cipher = createElectronCipher();
+    if (!cipher.isAvailable()) {
+      console.warn(
+        '[store] OS-level encryption is unavailable on this machine — ' +
+        'the Notion token will be stored in plaintext, same as before.'
+      );
+    }
+    const encrypted = wrapWithEncryption(raw, cipher, ['notionToken']);
+    lazyInstance = createPolymindStore(encrypted);
   }
   return lazyInstance;
 }
