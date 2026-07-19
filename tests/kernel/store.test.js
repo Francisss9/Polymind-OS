@@ -10,6 +10,7 @@ test('store: config', async (t) => {
     const store = createPolymindStore(createFakeBackingStore());
     assert.deepEqual(store.getConfig(), {
       notionToken: '',
+      displayName: '',
       databaseId: '',
       habitsDbId: '',
       goalsDbId: '',

@@ -10,8 +10,8 @@ test('notionPageToNote', async (t) => {
       id: 'note-1',
       last_edited_time: '2026-07-18T09:00:00.000Z',
       properties: {
-        Title: { title: [{ plain_text: 'Trading plan' }] },
-        Content: { rich_text: [{ plain_text: 'Risk 2% max.' }] },
+        Name: { title: [{ plain_text: 'Trading plan' }] },
+        Body: { rich_text: [{ plain_text: 'Risk 2% max.' }] },
         Tags: { multi_select: [{ name: 'trading' }, { name: 'discipline' }] },
         Pinned: { checkbox: true },
       },
@@ -30,15 +30,6 @@ test('notionPageToNote', async (t) => {
     assert.equal(note.title, 'Untitled');
   });
 
-  await t.test('falls back to a Name title property if Title is absent', () => {
-    const page = {
-      id: 'note-3',
-      properties: { Name: { title: [{ plain_text: 'Legacy title' }] } },
-    };
-    const note = notionPageToNote(page);
-    assert.equal(note.title, 'Legacy title');
-  });
-
   await t.test('empty content, tags, and pinned default sanely', () => {
     const note = notionPageToNote({ id: 'note-4', properties: {} });
     assert.equal(note.content, '');
@@ -50,12 +41,12 @@ test('notionPageToNote', async (t) => {
 test('noteToNotionProperties', async (t) => {
   await t.test('includes only the fields provided', () => {
     const props = noteToNotionProperties({ title: 'Hi', content: 'Body' });
-    assert.deepEqual(Object.keys(props).sort(), ['Content', 'Title']);
+    assert.deepEqual(Object.keys(props).sort(), ['Body', 'Name']);
   });
 
   await t.test('omits a field entirely when it is undefined', () => {
     const props = noteToNotionProperties({ title: 'Only title' });
-    assert.ok(!('Content' in props));
+    assert.ok(!('Body' in props));
     assert.ok(!('Tags' in props));
     assert.ok(!('Pinned' in props));
   });
