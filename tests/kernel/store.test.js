@@ -14,6 +14,7 @@ test('store: config', async (t) => {
       habitsDbId: '',
       goalsDbId: '',
       balanceDbId: '',
+      notesDbId: '',
       setupComplete: false,
     });
   });
@@ -84,5 +85,18 @@ test('store: cached collections', async (t) => {
 
     assert.equal(storeA.getCachedGoals().length, 1);
     assert.equal(storeB.getCachedGoals().length, 0);
+  });
+
+  await t.test('notes cache defaults to an empty array, with its own synced timestamp', () => {
+    const store = createPolymindStore(createFakeBackingStore());
+    assert.deepEqual(store.getCachedNotes(), []);
+    assert.equal(store.getNotesLastSyncedAt(), null);
+  });
+
+  await t.test('setCachedNotes/getCachedNotes round-trip', () => {
+    const store = createPolymindStore(createFakeBackingStore());
+    const notes = [{ id: 'n1', title: 'Test' }];
+    store.setCachedNotes(notes);
+    assert.deepEqual(store.getCachedNotes(), notes);
   });
 });

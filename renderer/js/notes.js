@@ -61,12 +61,12 @@ const Notes = (() => {
       <div class="note-item${n.id === activeId ? ' active' : ''}" data-id="${n.id}">
         <div class="note-item-title">
           ${n.pinned ? '<svg class="note-pin-icon" width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><path d="M9.828.722a.5.5 0 01.354.146l4.95 4.95a.5.5 0 010 .707c-.48.48-1.072.588-1.503.588-.177 0-.335-.018-.46-.039l-3.134 3.134a5.927 5.927 0 01.16 1.013c.046.702-.032 1.687-.72 2.375l-1.933 1.933a.5.5 0 01-.707 0L5.845 13.6l-3.172 3.172a.5.5 0 01-.707-.707l3.172-3.172-1.487-1.488a.5.5 0 010-.707l1.932-1.932c.688-.688 1.673-.767 2.375-.72.353.022.671.079.977.16L12.069 5.1a6.645 6.645 0 01-.04-.46c0-.43.108-1.022.588-1.502a.5.5 0 01.354-.147z"/></svg>' : ''}
-          ${escHtml(n.title || 'Untitled')}
+          ${escapeHtml(n.title || 'Untitled')}
         </div>
-        <div class="note-item-preview">${escHtml((n.content || '').slice(0, 60))}</div>
+        <div class="note-item-preview">${escapeHtml((n.content || '').slice(0, 60))}</div>
         <div class="note-item-meta">
           <span class="note-item-date">${fmtDate(n.updatedAt)}</span>
-          ${n.tags.map((t) => `<span class="note-item-tag">${escHtml(t)}</span>`).join('')}
+          ${n.tags.map((t) => `<span class="note-item-tag">${escapeHtml(t)}</span>`).join('')}
         </div>
       </div>
     `).join('');
@@ -79,7 +79,7 @@ const Notes = (() => {
   function renderTagFilters() {
     const tags = allTags();
     tagRowEl.innerHTML = tags.map((t) => `
-      <button class="notes-tag-filter${t === activeTagFilter ? ' active' : ''}" data-tag="${escHtml(t)}">${escHtml(t)}</button>
+      <button class="notes-tag-filter${t === activeTagFilter ? ' active' : ''}" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</button>
     `).join('');
     tagRowEl.querySelectorAll('.notes-tag-filter').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -124,7 +124,7 @@ const Notes = (() => {
     tags.forEach((tag) => {
       const chip = document.createElement('span');
       chip.className = 'note-editor-tag';
-      chip.innerHTML = `${escHtml(tag)}<button class="note-editor-tag-remove" data-tag="${escHtml(tag)}" title="Remove tag">×</button>`;
+      chip.innerHTML = `${escapeHtml(tag)}<button class="note-editor-tag-remove" data-tag="${escapeHtml(tag)}" title="Remove tag">×</button>`;
       tagInputRow.insertBefore(chip, tagAddInput);
       chip.querySelector('.note-editor-tag-remove').addEventListener('click', () => removeTag(tag));
     });
@@ -295,15 +295,6 @@ const Notes = (() => {
       e.preventDefault();
       flushSave();
     }
-  }
-
-  // ---- Escape helper ----
-  function escHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
   }
 
   // ---- Init ----
