@@ -2,35 +2,15 @@
 
 // =========================================================
 // SHELL MODULE
-// Owns: gate/app transitions, view switching, trade sync,
-// balance sync, settings handlers, auth flow, keybindings,
-// event binding, and app init.
+// Owns: view routing (showView), keyboard shortcuts, wiring
+// every DOM event listener to its handler, and app boot
+// (init). Gate/auth logic lives in gate.js, sync
+// orchestration in sync.js, Kernel settings in settings.js —
+// this file only routes and wires, it doesn't implement any
+// of those behaviours itself.
 // =========================================================
 
-// ---- Gate ---------------------------------------------------
-
-function showGate(step = 'login') {
-  $('#gate').classList.remove('hidden');
-  $('#app-shell').classList.add('hidden');
-  showStep(step);
-}
-
-function showApp() {
-  $('#gate').classList.add('hidden');
-  const shell = $('#app-shell');
-  shell.classList.remove('hidden');
-  shell.classList.remove('app-enter');
-  void shell.offsetWidth; // reflow
-  shell.classList.add('app-enter');
-}
-
-function showStep(name) {
-  ['step-login', 'step-notion'].forEach((id) => {
-    $('#' + id).classList.toggle('hidden', id !== 'step-' + name);
-  });
-}
-
-// ---- View switching -----------------------------------------
+// ---- View switching -------------------------------------------
 
 // Per-view render guard: stores hash of data at last render
 const _lastRenderHash = {};
@@ -54,6 +34,7 @@ function showView(name) {
   });
 
   if (name === 'settings') {
+    $('#settings-display-name').value = config.displayName || '';
     $('#settings-database').value  = config.databaseId  || '';
     $('#settings-habits-db').value = config.habitsDbId  || '';
     $('#settings-goals-db').value  = config.goalsDbId   || '';
@@ -84,264 +65,7 @@ function showView(name) {
   currentView = name;
 }
 
-// ---- Sync status --------------------------------------------
-
-function updateSyncStatus(ts) {
-  const el = $('#sync-status');
-  if (!el) return;
-  if (!ts) { el.textContent = 'Not synced'; return; }
-  const d = new Date(ts);
-  el.textContent = `Synced ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-}
-
-function setSyncing(active) {
-  syncing = active;
-  $('#sync-spinner')?.classList.toggle('hidden', !active);
-  if ($('#btn-sync')) $('#btn-sync').disabled = active;
-}
-
-// ---- Trade sync ---------------------------------------------
-
-async function loadCached() {
-  try {
-    trades = await window.polymind.trades.getCached();
-    filteredTrades = [...trades];
-    if (typeof renderCalendar === 'function') renderCalendar();
-    if (typeof renderTrades   === 'function') renderTrades();
-  } catch(e) {
-    console.error('[shell] loadCached failed:', e.message);
-  }
-}
-
-async function syncTrades() {
-  if (syncing) return;
-  setSyncing(true);
-  const errBar = $('#sync-error-bar');
-  errBar?.classList.add('hidden');
-  try {
-    const result = await window.polymind.trades.sync();
-    trades = result.trades;
-    filteredTrades = [...trades];
-    _lastRenderHash['charts'] = -1; // invalidate charts cache
-    if (typeof renderCalendar === 'function') renderCalendar();
-    if (typeof renderTrades   === 'function') renderTrades();
-    if (typeof applyFilter    === 'function') applyFilter($('#trades-search')?.value);
-    updateSyncStatus(result.lastSyncedAt);
-  } catch (err) {
-    const msg = `Sync failed: ${err.message || 'Unknown error'}`;
-    console.error('[trades] Sync failed:', err.message);
-    if (errBar) { errBar.textContent = msg; errBar.classList.remove('hidden'); }
-  } finally {
-    setSyncing(false);
-  }
-}
-
-// ---- Balance sync -------------------------------------------
-
-function updateBalanceStat(value) {
-  currentBalance = value;
-  const fmt = value != null
-    ? `€${Number(value).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    : '—';
-  const statEl = document.getElementById('stat-balance');
-  if (statEl) statEl.textContent = fmt;
-  const chartsEl = document.getElementById('charts-balance');
-  if (chartsEl) chartsEl.textContent = fmt;
-}
-
-async function loadCachedBalance() {
-  try {
-    const { balance } = await window.polymind.balance.getCached();
-    updateBalanceStat(balance);
-  } catch(e) {
-    console.warn('[balance] Cache load failed:', e.message);
-  }
-}
-
-// ---- Boot sync ----------------------------------------------
-// Called once after login/auto-login.
-// 1. Load all caches instantly (no network).
-// 2. Fire all configured DB syncs in parallel, silently skipping
-//    any DB that isn't configured yet. Never crashes the app.
-
-async function bootSync() {
-  await loadCached();
-  await loadCachedBalance();
-
-  const cfg = await window.polymind.config.get();
-  const syncs = [];
-
-  if (cfg.databaseId)  syncs.push(syncTrades().catch((e)  => console.warn('[boot] trades:', e.message)));
-  if (cfg.balanceDbId) syncs.push(syncBalance().catch((e)  => console.warn('[boot] balance:', e.message)));
-  if (cfg.habitsDbId)  syncs.push(window.polymind.habits.sync().catch((e)  => console.warn('[boot] habits:', e.message)));
-  if (cfg.goalsDbId)   syncs.push(window.polymind.goals.sync().catch((e)   => console.warn('[boot] goals:', e.message)));
-  if (cfg.notesDbId)   syncs.push(window.polymind.notes.sync().catch((e)   => console.warn('[boot] notes:', e.message)));
-
-  await Promise.allSettled(syncs);
-}
-
-async function syncBalance() {
-  const btn = document.getElementById('btn-balance-sync');
-  if (btn) btn.disabled = true;
-  try {
-    const { balance } = await window.polymind.balance.sync();
-    updateBalanceStat(balance);
-    _lastRenderHash['charts'] = -1; // invalidate so charts re-render with new balance
-    if (typeof renderCharts === 'function') renderCharts(trades);
-  } catch(e) {
-    console.error('[balance] Sync failed:', e.message);
-    const el = document.getElementById('charts-balance');
-    if (el) el.textContent = 'Sync failed';
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
-// ---- Auth ---------------------------------------------------
-
-async function handleLogin() {
-  const email = $('#login-email').value.trim();
-  const pw    = $('#login-password').value;
-  clearBanners($('#login-error'));
-
-  if (!email || !pw) {
-    showBanner($('#login-error'), 'Enter your email and password.');
-    return;
-  }
-
-  $('#login-spinner').classList.remove('hidden');
-  $('#btn-login').disabled = true;
-  await new Promise((r) => setTimeout(r, 280));
-
-  try {
-    if (isFirstRun()) {
-      setLocalAuth(email, pw);
-    } else if (!verifyLocalAuth(email, pw)) {
-      showBanner($('#login-error'), 'Incorrect email or password.');
-      return;
-    }
-    setSession();
-    config = await window.polymind.config.get();
-    if (!config.setupComplete || !config.notionToken || !config.databaseId) {
-      showStep('notion');
-    } else {
-      showApp();
-      showView('home');
-      bootSync(); // fire-and-forget: UI appears instantly, syncs run in background
-    }
-  } finally {
-    $('#login-spinner').classList.add('hidden');
-    $('#btn-login').disabled = false;
-  }
-}
-
-async function handleNotionConnect() {
-  if (connecting) return;
-  clearBanners($('#setup-error'), $('#setup-success'));
-
-  const notionToken = $('#setup-token').value.trim();
-  const databaseId  = $('#setup-database').value.trim();
-
-  if (!notionToken || !databaseId) {
-    showBanner($('#setup-error'), 'Both fields are required.');
-    return;
-  }
-
-  connecting = true;
-  $('#connect-spinner').classList.remove('hidden');
-  $('#btn-test-connect').disabled = true;
-
-  try {
-    const result = await window.polymind.notion.test({ notionToken, databaseId });
-    showBanner($('#setup-success'), `✓ Connected to "${result.title}". Syncing…`);
-    $('#setup-success').classList.remove('hidden');
-    await window.polymind.config.set({ notionToken, databaseId, setupComplete: true });
-    config = await window.polymind.config.get();
-    await new Promise((r) => setTimeout(r, 500));
-    showApp();
-    showView('home');
-    await syncTrades();
-  } catch (err) {
-    showBanner($('#setup-error'), err.message || 'Connection failed.');
-  } finally {
-    connecting = false;
-    $('#connect-spinner').classList.add('hidden');
-    $('#btn-test-connect').disabled = false;
-  }
-}
-
-// ---- Settings -----------------------------------------------
-
-async function handleSettingsSave() {
-  clearBanners($('#settings-error'), $('#settings-success'));
-  const payload = {
-    databaseId:  $('#settings-database').value.trim(),
-    habitsDbId:  $('#settings-habits-db').value.trim(),
-    goalsDbId:   $('#settings-goals-db').value.trim(),
-    balanceDbId: $('#settings-balance-db').value.trim(),
-    notesDbId:   $('#settings-notes-db').value.trim(),
-  };
-  const token = $('#settings-token').value.trim();
-  if (token) payload.notionToken = token;
-  try {
-    config = await window.polymind.config.set(payload);
-    showBanner($('#settings-success'), 'Saved.');
-    $('#settings-success').classList.remove('hidden');
-    $('#settings-token').value = '';
-  } catch (err) {
-    showBanner($('#settings-error'), err.message);
-  }
-}
-
-async function handleSettingsTest() {
-  clearBanners($('#settings-error'), $('#settings-success'));
-  try {
-    const r = await window.polymind.notion.test({
-      notionToken: $('#settings-token').value.trim() || config.notionToken,
-      databaseId:  $('#settings-database').value.trim(),
-    });
-    showBanner($('#settings-success'), `✓ Connected to "${r.title}"`);
-    $('#settings-success').classList.remove('hidden');
-  } catch (err) {
-    showBanner($('#settings-error'), err.message);
-  }
-}
-
-function handleDisconnect() {
-  const btn = document.getElementById('btn-disconnect');
-  if (!btn) return;
-  if (btn.dataset.confirm !== 'pending') {
-    btn.dataset.confirm = 'pending';
-    btn.textContent = 'Sure? Click again';
-    setTimeout(() => {
-      if (btn.dataset.confirm === 'pending') {
-        btn.dataset.confirm = '';
-        btn.textContent = 'Disconnect Notion';
-      }
-    }, 3000);
-    return;
-  }
-  window.polymind.config.set({ setupComplete: false, notionToken: '', databaseId: '' });
-  showGate('notion');
-}
-
-function handleLogout() {
-  clearSession();
-  showGate('login');
-}
-
-// ---- Helpers ------------------------------------------------
-
-function setupToggle(btnId, inputId) {
-  const btn   = $('#' + btnId);
-  const input = $('#' + inputId);
-  if (!btn || !input) return;
-  btn.addEventListener('click', () => {
-    input.type = input.type === 'text' ? 'password' : 'text';
-  });
-}
-
-// ---- Keyboard shortcuts -------------------------------------
+// ---- Keyboard shortcuts -----------------------------------------
 
 function bindShortcuts() {
   document.addEventListener('keydown', (e) => {
@@ -429,11 +153,18 @@ async function init() {
   const artBg = document.getElementById('gate-art-bg');
   if (artBg) artBg.style.backgroundImage = "url('assets/login-bg.jpg')";
 
-  if (typeof initHome === 'function') initHome();
-  if (typeof Notes !== 'undefined') Notes.init();
+  // Awaited deliberately: both of these have an async cache-load tail
+  // (loadCachedHabits/loadCachedGoals inside initHome, getCached inside
+  // Notes.init). If bootSync() fired before those resolved, its fresh
+  // syncHabits()/syncGoals()/Notes.sync() could render first, then get
+  // silently overwritten when the slower stale-cache read finally
+  // resolves and re-renders on top of it.
+  if (typeof initHome === 'function') await initHome();
+  if (typeof Notes !== 'undefined') await Notes.init();
   bindEvents();
 
   config = await window.polymind.config.get();
+  if (typeof updateClock === 'function') updateClock(); // pick up displayName immediately, don't wait for the 10s tick
 
   // Auto-login: if a session exists and setup is complete, skip the gate entirely
   if (hasActiveSession() && config.setupComplete && config.notionToken && config.databaseId) {

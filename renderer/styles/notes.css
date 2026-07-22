@@ -420,3 +420,7 @@
 .notes-sync-btn:hover {
   color: var(--text);
 }
+
+.notes-sync-error {
+  color: #e07070 !important;
+}

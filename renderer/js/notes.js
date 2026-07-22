@@ -114,6 +114,15 @@ const Notes = (() => {
     renderEditorTags(note.tags);
     updatePinBtn(note.pinned);
     setSaveStatus('');
+    resetDeleteConfirm();
+  }
+
+  function resetDeleteConfirm() {
+    const btn = document.getElementById('notes-delete-btn');
+    if (!btn) return;
+    btn.dataset.confirm = '';
+    const label = btn.querySelector('.notes-btn-label');
+    if (label) label.textContent = 'Delete';
   }
 
   function renderEditorTags(tags) {
@@ -159,13 +168,36 @@ const Notes = (() => {
       titleInput.focus();
     } catch (err) {
       console.error('notes:create', err);
+      showNotesError(err.message || 'Could not create note.');
     }
+  }
+
+  function showNotesError(message) {
+    if (!syncBar) return;
+    const label = syncBar.querySelector('.notes-sync-label');
+    if (!label) return;
+    const original = label.textContent;
+    label.textContent = message;
+    label.classList.add('notes-sync-error');
+    setTimeout(() => {
+      label.textContent = original;
+      label.classList.remove('notes-sync-error');
+    }, 4000);
   }
 
   async function deleteActiveNote() {
     const note = activeNote();
     if (!note) return;
-    if (!confirm(`Delete "${note.title || 'Untitled'}"? This cannot be undone.`)) return;
+    const btn = document.getElementById('notes-delete-btn');
+    if (btn && btn.dataset.confirm !== 'pending') {
+      btn.dataset.confirm = 'pending';
+      const label = btn.querySelector('.notes-btn-label');
+      if (label) label.textContent = 'Sure?';
+      setTimeout(() => {
+        if (btn.dataset.confirm === 'pending') resetDeleteConfirm();
+      }, 2500);
+      return;
+    }
     clearTimeout(saveTimer);
     const id = activeId;
     activeId = null;
@@ -177,6 +209,7 @@ const Notes = (() => {
       await window.polymind.notes.delete(id);
     } catch (err) {
       console.error('notes:delete', err);
+      showNotesError(err.message || 'Could not delete note.');
     }
   }
 
@@ -196,6 +229,7 @@ const Notes = (() => {
       await window.polymind.notes.update({ id: note.id, pinned: newPinned });
     } catch (err) {
       console.error('notes:update pin', err);
+      showNotesError(err.message || 'Could not update pin.');
     }
   }
 
@@ -354,7 +388,7 @@ const Notes = (() => {
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
                 <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
-              Delete
+              <span class="notes-btn-label">Delete</span>
             </button>
           </div>
         </div>
@@ -440,5 +474,5 @@ const Notes = (() => {
     renderEditor();
   }
 
-  return { init };
+  return { init, sync: syncNotes };
 })();

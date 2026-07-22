@@ -113,6 +113,13 @@ Polymind OS
 │   ├── kernel/                ← errors, notion-client, notion-sync, store, secure-store, utils
 │   ├── modules/                ← one test file per schema module, including notes
 │   ├── renderer/                ← pure renderer utility functions (utils.js)
+│   ├── renderer-dom/              ← runs the real index.html + real renderer/js/*.js in jsdom
+│   │   ├── dom-harness.js         ← loads production code into a real DOM, fakes window.polymind
+│   │   ├── gate.test.js
+│   │   ├── sync.test.js
+│   │   ├── settings.test.js
+│   │   ├── notes.test.js
+│   │   └── wiring.test.js         ← every button bindEvents() wires up actually does something
 │   └── helpers/                  ← fake backing store, fake Notion client, fake cipher
 │
 └── scripts/
@@ -160,7 +167,7 @@ modules/*/schema.js  (pure: Notion page → local object)
 |---|---|
 | `npm start` | Launch Polymind OS via Electron Forge |
 | `npm run make` | Package for distribution |
-| `npm test` | Run the full test suite (118 tests, `node:test`) |
+| `npm test` | Run the full test suite (196 tests, `node:test`) |
 
 ---
 
@@ -178,7 +185,13 @@ modules/*/schema.js  (pure: Notion page → local object)
 
 ## Testing
 
-118 tests across kernel modules, schema modules, the encryption wrapper, and renderer pure functions — run with Node's built-in test runner, no extra framework. Notion API calls are faked via `tests/helpers/fake-notion-client.js`; `electron-store` is faked via `tests/helpers/fake-backing-store.js`; the encryption cipher is faked via `tests/helpers/fake-cipher.js`. `main.js` itself has no direct test coverage — it's tightly coupled to `ipcMain`/`BrowserWindow` and would need a heavier mocking harness to test meaningfully; the logic it calls into (schemas, sync, store, errors) is what's actually tested.
+196 tests, run with Node's built-in test runner — no extra framework beyond `jsdom` for DOM tests.
+
+**Kernel & schema layer (118 tests, `tests/kernel/` + `tests/modules/` + `tests/renderer/`)** — pure logic, faked dependencies: Notion API via `tests/helpers/fake-notion-client.js`, `electron-store` via `tests/helpers/fake-backing-store.js`, the encryption cipher via `tests/helpers/fake-cipher.js`.
+
+**Renderer DOM layer (78 tests, `tests/renderer-dom/`)** — runs the *actual* `renderer/index.html` and the *actual* `renderer/js/*.js` source files inside a real `jsdom` window via `tests/renderer-dom/dom-harness.js`, not reimplementations. `window.polymind` (the real preload.js contextBridge surface) is faked with a controllable spy per method. This is what closes the gap pure-logic tests can't: it catches XSS regressions in real rendered HTML, silent event-wiring failures (a button that looks right in markup but has no listener — exactly the class of bug that cost real debugging time before this suite existed), and cross-module integration bugs like `bootSync()` calling the wrong sync path and silently updating a cache with no visible re-render. Covers `gate.js` (login/session/logout/first-run Notion connect), `sync.js` (fan-out correctness, resilience, concurrency guards), `settings.js` (save/test/disconnect, token-blank-means-keep-current), `notes.js` (XSS escaping is asserted against real parsed DOM output, not string matching), and a dedicated `wiring.test.js` that exercises every button `bindEvents()` wires up.
+
+`main.js` itself has no direct test coverage — it's tightly coupled to `ipcMain`/`BrowserWindow` and would need a heavier mocking harness to test meaningfully; the logic it calls into (schemas, sync, store, errors) is what's actually tested.
 
 ---
 

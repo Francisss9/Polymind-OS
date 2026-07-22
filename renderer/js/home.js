@@ -56,7 +56,9 @@ function updateClock() {
   const greetEl = document.getElementById('home-greeting');
   if (greetEl) {
     const hr = now.getHours();
-    greetEl.textContent = `Good ${hr < 12 ? 'morning' : hr < 18 ? 'afternoon' : 'evening'}, Francis`;
+    const timeOfDay = hr < 12 ? 'morning' : hr < 18 ? 'afternoon' : 'evening';
+    const name = (typeof config !== 'undefined' && config?.displayName) ? `, ${config.displayName}` : '';
+    greetEl.textContent = `Good ${timeOfDay}${name}`;
   }
 }
 
@@ -357,7 +359,7 @@ function renderSavingGoals() {
     return `
       <div class="saving-item" data-goal-id="${g.id}">
         <div class="saving-top">
-          <span class="saving-name">${g.name}</span>
+          <span class="saving-name">${escapeHtml(g.name)}</span>
           <span class="saving-pct">${safeP}%</span>
         </div>
         <div class="saving-bar-wrap"><div class="saving-bar" style="width:${safeP}%"></div></div>
@@ -393,7 +395,7 @@ function renderObjectives() {
 }
 
 // =========================================================
-// NOTES (local)
+// SCRATCHPAD (device-local only — not the Notes module, not synced)
 // =========================================================
 
 function initNotes() {

@@ -106,3 +106,11 @@ function animateNumber(el, target, isFloat = true, prefix = '') {
   }
   requestAnimationFrame(step);
 }
+
+// Renderer scripts load as plain <script> tags (no bundler, no CommonJS) —
+// `module` is never defined in that context (contextIsolation: true,
+// nodeIntegration: false), so this export is a no-op there and only
+// activates under Node's test runner.
+if (typeof module !== 'undefined') {
+  module.exports = { toISODate, todayISO, formatPnl, formatDate, resultClass, escapeHtml };
+}

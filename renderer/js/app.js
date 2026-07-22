@@ -4,11 +4,16 @@
 // APP — shared state + local auth + entry constants
 // =========================================================
 // Load order (index.html):
-//   utils.js → home.js → calendar.js → charts.js
-//   → trades.js → shell.js (calls init() at bottom)
+//   utils.js → app.js → home.js → calendar.js → charts.js
+//   → trades.js → notes.js → gate.js → sync.js → settings.js
+//   → shell.js (calls init() at bottom)
 //
 // All globals defined here are available to every module
-// that loads after this file. shell.js owns init().
+// that loads after this file. gate.js owns login/logout,
+// sync.js owns pulling data from Notion, settings.js owns
+// the Kernel view's save/test/disconnect actions, and
+// shell.js owns view routing + wiring everything together
+// via init().
 // =========================================================
 
 const $ = (sel) => document.querySelector(sel);
@@ -65,8 +70,8 @@ function hasActiveSession() {
 // =========================================================
 // SHARED STATE
 // =========================================================
-// Mutated by shell.js (sync) and trades.js (CRUD).
-// Read by calendar.js and charts.js.
+// Mutated by sync.js (trades/balance sync) and trades.js
+// (manual CRUD). Read by calendar.js and charts.js.
 
 let trades         = [];
 let filteredTrades = [];

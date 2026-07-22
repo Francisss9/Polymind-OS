@@ -266,7 +266,7 @@
 
               <!-- Clock + greeting -->
               <div class="home-widget widget-clock-card">
-                <div class="clock-greeting" id="home-greeting">Good morning, Francis</div>
+                <div class="clock-greeting" id="home-greeting">Good morning</div>
                 <div class="clock-time" id="home-clock">00:00</div>
                 <div class="clock-date" id="home-date">Thu Jun 25</div>
                 <div class="clock-quote">"Sow a thought, reap an action; sow an action, reap a habit; sow a habit, reap a character; sow a character, reap a destiny."</div>
@@ -276,9 +276,9 @@
               <div class="home-widget">
                 <div class="widget-header">
                   <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 2h10v12H3zM6 6h4M6 9h4M6 12h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-                  <span class="widget-label">NOTES</span>
+                  <span class="widget-label">SCRATCHPAD</span>
                 </div>
-                <textarea id="home-notes" class="home-notes-area" placeholder="Quick notes…" spellcheck="false"></textarea>
+                <textarea id="home-notes" class="home-notes-area" placeholder="Jot something down (device-only, not synced)…" spellcheck="false"></textarea>
               </div>
 
               <!-- Skills -->
@@ -586,6 +586,10 @@
           <div id="settings-error" class="error-banner hidden"></div>
           <div id="settings-success" class="success-banner hidden"></div>
           <div class="form-group">
+            <label for="settings-display-name">Display name</label>
+            <input id="settings-display-name" type="text" placeholder="Used in the WorkStation greeting" autocomplete="off" />
+          </div>
+          <div class="form-group">
             <label for="settings-token">Integration token</label>
             <input id="settings-token" type="password" placeholder="Leave blank to keep current" autocomplete="off" />
           </div>
@@ -711,6 +715,9 @@
   <script src="js/charts.js"></script>
   <script src="js/trades.js"></script>
   <script src="js/notes.js"></script>
+  <script src="js/gate.js"></script>
+  <script src="js/sync.js"></script>
+  <script src="js/settings.js"></script>
   <script src="js/shell.js"></script>
   <script src="js/polish.js"></script>
 </body>
