@@ -18,7 +18,7 @@ const path = require('path');
 const { getNotionClient, resetNotionClient } = require('./kernel/notion-client');
 const { normalizeDatabaseId } = require('./kernel/utils');
 const { toUserError } = require('./kernel/errors');
-const { syncCollection } = require('./kernel/notion-sync');
+const { syncCollection, mergeCollection } = require('./kernel/notion-sync');
 const store = require('./kernel/store');
 const { tradeToNotionProperties, notionPageToTrade }               = require('./modules/trading-tracker/schema');
 const { notionPageToHabitEntry, habitCheckboxPatch }                = require('./modules/habits/schema');
@@ -95,6 +95,31 @@ function requireDatabaseId(config, key, label) {
   return dbId;
 }
 
+/**
+ * De-duplicate concurrent calls to the same sync channel. If the
+ * renderer fires the same sync twice before the first finishes (e.g.
+ * bootSync() racing a manual "r" press), the second call just awaits
+ * the exact same in-flight request instead of starting a second,
+ * overlapping Notion query against the same database.
+ */
+const inFlightSyncs = new Map();
+
+function dedupeSync(key, fn) {
+  if (inFlightSyncs.has(key)) return inFlightSyncs.get(key);
+  const promise = fn().finally(() => inFlightSyncs.delete(key));
+  inFlightSyncs.set(key, promise);
+  return promise;
+}
+
+function sortTradesByDateDesc(trades) {
+  return [...trades].sort((a, b) => {
+    if (!a.date && !b.date) return 0;
+    if (!a.date) return 1;
+    if (!b.date) return -1;
+    return a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
+  });
+}
+
 // =========================================================
 // IPC: config
 // =========================================================
@@ -136,26 +161,51 @@ ipcMain.handle('notion:test', async (_e, { notionToken, databaseId }) => {
 
 ipcMain.handle('trades:getCached', () => store.getCachedTrades());
 
-ipcMain.handle('trades:sync', async () => {
+ipcMain.handle('trades:sync', () => dedupeSync('trades:sync', async () => {
   const { client, config } = requireNotionClient();
   const databaseId = requireDatabaseId(config, 'databaseId', 'Trading Tracker DB');
 
   try {
-    const trades = await syncCollection({
+    const cached = store.getCachedTrades();
+    const previousSyncedAt = store.getLastSyncedAt();
+
+    // Incremental sync: once we have a prior sync timestamp, only ask
+    // Notion for rows touched since then, and fold them into the
+    // existing cache instead of replacing it outright. Cuts request
+    // volume and sync time as the database grows. First run (no
+    // previousSyncedAt yet) still does a full sync, same as before.
+    // See mergeCollection's doc comment in kernel/notion-sync.js for
+    // the one thing this can't catch: a row deleted directly in Notion
+    // (rather than through this app) won't be removed from the local
+    // cache until a full resync happens again.
+    const queryOptions = { sorts: [{ property: 'Date', direction: 'descending' }] };
+    if (previousSyncedAt) {
+      queryOptions.filter = {
+        timestamp: 'last_edited_time',
+        last_edited_time: { on_or_after: previousSyncedAt },
+      };
+    }
+
+    const changed = await syncCollection({
       client,
       databaseId,
       mapPage: notionPageToTrade,
-      queryOptions: { sorts: [{ property: 'Date', direction: 'descending' }] },
+      queryOptions,
       logLabel: 'trades:sync',
     });
+
+    const trades = previousSyncedAt
+      ? sortTradesByDateDesc(mergeCollection(cached, changed))
+      : changed; // first sync: already fetched full + sorted by Notion
+
     const lastSyncedAt = new Date().toISOString();
     store.setCachedTrades(trades);
     store.setLastSyncedAt(lastSyncedAt);
-    return { trades, lastSyncedAt };
+    return { trades, lastSyncedAt, changedCount: changed.length };
   } catch (err) {
     throw toUserError(err, 'Notion sync error.');
   }
-});
+}));
 
 ipcMain.handle('trades:create', async (_e, trade) => {
   const { client, config } = requireNotionClient();

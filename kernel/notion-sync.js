@@ -56,4 +56,42 @@ async function syncCollection({ client, databaseId, mapPage, queryOptions = {}, 
   });
 }
 
-module.exports = { queryAllPages, syncCollection };
+/**
+ * Merge freshly-synced rows into an existing cached collection, keyed by
+ * id. Existing rows keep their position; rows present in `incoming` are
+ * upserted in place, and any row in `incoming` not already present is
+ * appended. Used to fold an incremental (filtered) Notion query into the
+ * local cache without discarding everything that wasn't touched since
+ * the last sync.
+ *
+ * Note: this only ever adds/updates — it cannot detect a row that was
+ * deleted (archived) directly in Notion, since a filtered query never
+ * returns it in the first place. A full, unfiltered sync (empty
+ * `sinceIso` in the caller) still fully replaces the cache and is the
+ * only path that self-heals a Notion-side deletion.
+ *
+ * @param {Array<object>} existing   Current cached rows
+ * @param {Array<object>} incoming   Freshly-fetched rows to merge in
+ * @param {string} [idKey]           Property used to match rows (default 'id')
+ * @returns {Array<object>} Merged collection
+ */
+function mergeCollection(existing, incoming, idKey = 'id') {
+  if (!incoming.length) return existing;
+
+  const merged = existing.map((row) => ({ ...row }));
+  const indexById = new Map(merged.map((row, i) => [row[idKey], i]));
+
+  for (const row of incoming) {
+    const i = indexById.get(row[idKey]);
+    if (i === undefined) {
+      indexById.set(row[idKey], merged.length);
+      merged.push(row);
+    } else {
+      merged[i] = row;
+    }
+  }
+
+  return merged;
+}
+
+module.exports = { queryAllPages, syncCollection, mergeCollection };

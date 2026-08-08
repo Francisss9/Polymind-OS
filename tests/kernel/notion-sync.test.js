@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { queryAllPages, syncCollection } = require('../../kernel/notion-sync');
+const { queryAllPages, syncCollection, mergeCollection } = require('../../kernel/notion-sync');
 const { createFakeNotionClient } = require('../helpers/fake-notion-client');
 
 function fakePage(id, extra = {}) {
@@ -94,5 +94,44 @@ test('syncCollection', async (t) => {
     });
 
     assert.deepEqual(results, []);
+  });
+});
+
+test('mergeCollection', async (t) => {
+  await t.test('returns the existing collection unchanged when nothing new came in', () => {
+    const existing = [{ id: 'a', v: 1 }, { id: 'b', v: 1 }];
+    const result = mergeCollection(existing, []);
+    assert.deepEqual(result, existing);
+  });
+
+  await t.test('upserts a row that already exists in place, without reordering', () => {
+    const existing = [{ id: 'a', v: 1 }, { id: 'b', v: 1 }, { id: 'c', v: 1 }];
+    const result = mergeCollection(existing, [{ id: 'b', v: 2 }]);
+    assert.deepEqual(result, [{ id: 'a', v: 1 }, { id: 'b', v: 2 }, { id: 'c', v: 1 }]);
+  });
+
+  await t.test('appends a row that is not already present', () => {
+    const existing = [{ id: 'a', v: 1 }];
+    const result = mergeCollection(existing, [{ id: 'z', v: 1 }]);
+    assert.deepEqual(result, [{ id: 'a', v: 1 }, { id: 'z', v: 1 }]);
+  });
+
+  await t.test('handles a mix of updates and new rows in one call', () => {
+    const existing = [{ id: 'a', v: 1 }, { id: 'b', v: 1 }];
+    const result = mergeCollection(existing, [{ id: 'b', v: 2 }, { id: 'c', v: 1 }]);
+    assert.deepEqual(result, [{ id: 'a', v: 1 }, { id: 'b', v: 2 }, { id: 'c', v: 1 }]);
+  });
+
+  await t.test('does not mutate the original existing array or its objects', () => {
+    const original = [{ id: 'a', v: 1 }];
+    const existingCopy = JSON.parse(JSON.stringify(original));
+    mergeCollection(original, [{ id: 'a', v: 2 }]);
+    assert.deepEqual(original, existingCopy);
+  });
+
+  await t.test('supports a custom id key', () => {
+    const existing = [{ pageId: 'x', v: 1 }];
+    const result = mergeCollection(existing, [{ pageId: 'x', v: 2 }], 'pageId');
+    assert.deepEqual(result, [{ pageId: 'x', v: 2 }]);
   });
 });
