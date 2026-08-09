@@ -66,6 +66,17 @@ function showView(name) {
 }
 
 // ---- Keyboard shortcuts -----------------------------------------
+//
+// `n` (new trade) and `/` / Cmd|Ctrl+K (focus the trade search) only
+// make sense while looking at the Trading view — without this guard,
+// e.g. pressing `n` while reading a note in the Notes view popped the
+// trade modal open out of context. `r` (sync) stays global on
+// purpose: it's a general "refresh my data" action, useful from any
+// view (Charts, for one, renders directly off the same trades data).
+// Esc-to-close-modal stays global too, since it should always be able
+// to close a modal no matter which view opened it.
+
+const DASHBOARD_ONLY_SHORTCUTS = new Set(['n', '/']);
 
 function bindShortcuts() {
   document.addEventListener('keydown', (e) => {
@@ -78,6 +89,10 @@ function bindShortcuts() {
     }
 
     if (typing || $('#app-shell').classList.contains('hidden')) return;
+
+    const isDashboardShortcut =
+      DASHBOARD_ONLY_SHORTCUTS.has(e.key) || (e.key === 'k' && (e.metaKey || e.ctrlKey));
+    if (isDashboardShortcut && currentView !== 'dashboard') return;
 
     if (e.key === 'n' && !e.metaKey && !e.ctrlKey) { openTradeModal(); return; }
     if (e.key === 'r' && !e.metaKey && !e.ctrlKey) { syncTrades();    return; }
