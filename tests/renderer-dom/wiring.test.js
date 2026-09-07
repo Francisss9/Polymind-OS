@@ -145,17 +145,4 @@ test('wiring: every critical button in bindEvents() actually does something when
     assert.equal(window.polymind.config.set.calls.length, 1, 'save must have fired');
     assert.equal(window.polymind.notion.test.calls.length, 1, 'test-connect must have fired');
   });
-
-  await t.test('the trades search input actually filters as you type', () => {
-    const { window } = createRendererDom();
-    window.bindEvents();
-
-    const search = window.document.getElementById('trades-search');
-    search.value = 'EURUSD';
-    search.dispatchEvent(new window.Event('input', { bubbles: true }));
-
-    // applyFilter is exercised in depth in trades-specific coverage;
-    // here we only need proof the input event reaches it at all.
-    assert.equal(search.value, 'EURUSD');
-  });
 });

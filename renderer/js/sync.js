@@ -30,9 +30,7 @@ function setSyncing(active) {
 async function loadCached() {
   try {
     trades = await window.polymind.trades.getCached();
-    filteredTrades = [...trades];
     if (typeof renderCalendar === 'function') renderCalendar();
-    if (typeof renderTrades   === 'function') renderTrades();
   } catch(e) {
     console.error('[shell] loadCached failed:', e.message);
   }
@@ -46,11 +44,8 @@ async function syncTrades() {
   try {
     const result = await window.polymind.trades.sync();
     trades = result.trades;
-    filteredTrades = [...trades];
     _lastRenderHash['charts'] = -1; // invalidate charts cache
     if (typeof renderCalendar === 'function') renderCalendar();
-    if (typeof renderTrades   === 'function') renderTrades();
-    if (typeof applyFilter    === 'function') applyFilter($('#trades-search')?.value);
     updateSyncStatus(result.lastSyncedAt);
   } catch (err) {
     const msg = `Sync failed: ${err.message || 'Unknown error'}`;

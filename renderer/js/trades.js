@@ -2,96 +2,23 @@
 
 // =========================================================
 // TRADES MODULE
-// Owns: table render, trade modal, CRUD, filter, stats.
-// Reads `trades` and `filteredTrades` from shared state (app.js).
-// All Notion mutations go through window.polymind.trades.*
+// Owns: trade modal + CRUD. Reads `trades` from shared state
+// (app.js). All Notion mutations go through window.polymind.trades.*
 // =========================================================
 
-// ---- Stats --------------------------------------------------
-
-function updateStats() {
-  if (typeof updatePeriodStats === 'function') updatePeriodStats();
-}
-
-function fixStatSuffixes() {
-  const el = $('#stat-winrate');
-  if (!el) return;
-  if (el.dataset.suffix && !el.textContent.includes('%') && el.textContent !== '—') {
-    el.textContent += '%';
-  }
-}
-
-// ---- Table render -------------------------------------------
-
-function renderTrades() {
-  const tbody = $('#trades-body');
-  const empty = $('#trades-empty');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-
-  if (!filteredTrades.length) {
-    empty?.classList.remove('hidden');
-    updateStats();
-    return;
-  }
-  empty?.classList.add('hidden');
-
-  filteredTrades.forEach((trade, i) => {
-    const tr = document.createElement('tr');
-    tr.className = 'trade-row-enter';
-    tr.style.animationDelay = `${i * 30}ms`;
-    tr.innerHTML = `
-      <td>${formatDate(trade.date)}</td>
-      <td>${escapeHtml(trade.pair)}</td>
-      <td>${escapeHtml(trade.direction)}</td>
-      <td>${trade.entryPrice ?? '—'}</td>
-      <td>${trade.exitPrice ?? '—'}</td>
-      <td class="${trade.pnl > 0 ? 'pnl-positive' : trade.pnl < 0 ? 'pnl-negative' : ''}">${formatPnl(trade.pnl)}</td>
-      <td>${trade.rr ?? '—'}</td>
-      <td><span class="result-pill ${resultClass(trade.result)}">${escapeHtml(trade.result || '—')}</span></td>
-      <td>
-        <div class="row-actions">
-          <button class="btn btn-ghost" data-edit="${trade.id}">Edit</button>
-          <button class="btn btn-danger" data-delete="${trade.id}">Del</button>
-        </div>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-
-  // Row click → open modal
-  tbody.querySelectorAll('tr').forEach((tr, i) => {
-    tr.addEventListener('click', (e) => {
-      if (e.target.closest('button')) return;
-      openTradeModal(filteredTrades[i]);
-    });
-  });
-
-  tbody.querySelectorAll('[data-edit]').forEach((btn) => {
-    btn.addEventListener('click', () => openTradeModal(trades.find((t) => t.id === btn.dataset.edit)));
-  });
-
-  tbody.querySelectorAll('[data-delete]').forEach((btn) => {
-    btn.addEventListener('click', () => deleteTrade(btn.dataset.delete));
-  });
-
-  updateStats();
-  setTimeout(fixStatSuffixes, 650);
-}
-
-// ---- Filter -------------------------------------------------
-
-function applyFilter(q) {
-  q = (q || '').toLowerCase().trim();
-  filteredTrades = q
-    ? trades.filter((t) =>
-        (t.pair     || '').toLowerCase().includes(q) ||
-        (t.result   || '').toLowerCase().includes(q) ||
-        (t.direction|| '').toLowerCase().includes(q) ||
-        (t.notes    || '').toLowerCase().includes(q))
-    : [...trades];
-  renderTrades();
-  if (typeof renderCalendar === 'function') renderCalendar();
-}
+// Trading view is calendar-based (see calendar.js / renderCalendar()) —
+// there used to be a plain table + text-search UI here too, but it was
+// removed from index.html at some point and this file never got
+// cleaned up after it. renderTrades()/applyFilter()/filteredTrades were
+// dead code: renderTrades() targeted a #trades-body element that no
+// longer exists, and calendar.js's getPeriodTrades() reads straight
+// from `trades`, never from filteredTrades. updateStats()/
+// fixStatSuffixes() were already unreachable before this cleanup too —
+// they were only ever called from inside the dead renderTrades().
+// Removed together; see saveTrade()/deleteTrade() below for the one
+// live behaviour applyFilter() was quietly also responsible for
+// (refreshing the calendar after a CRUD op) — that's now a direct,
+// explicit call.
 
 // ---- Modal --------------------------------------------------
 
@@ -165,7 +92,7 @@ async function saveTrade(e) {
       const created = await window.polymind.trades.create(trade);
       trades.unshift(created);
     }
-    applyFilter($('#trades-search').value);
+    if (typeof renderCalendar === 'function') renderCalendar();
     closeTradeModal();
   } catch (err) {
     showBanner($('#trade-error'), err.message || 'Failed to save');
@@ -193,7 +120,7 @@ async function deleteTrade(id) {
   try {
     await window.polymind.trades.delete(id);
     trades = trades.filter((t) => t.id !== id);
-    applyFilter($('#trades-search').value);
+    if (typeof renderCalendar === 'function') renderCalendar();
   } catch (err) {
     console.error('[trades] Delete failed:', err.message);
     showBanner($('#sync-error-bar'), err.message || 'Delete failed');

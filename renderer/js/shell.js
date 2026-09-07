@@ -67,16 +67,16 @@ function showView(name) {
 
 // ---- Keyboard shortcuts -----------------------------------------
 //
-// `n` (new trade) and `/` / Cmd|Ctrl+K (focus the trade search) only
-// make sense while looking at the Trading view — without this guard,
-// e.g. pressing `n` while reading a note in the Notes view popped the
-// trade modal open out of context. `r` (sync) stays global on
-// purpose: it's a general "refresh my data" action, useful from any
-// view (Charts, for one, renders directly off the same trades data).
-// Esc-to-close-modal stays global too, since it should always be able
-// to close a modal no matter which view opened it.
-
-const DASHBOARD_ONLY_SHORTCUTS = new Set(['n', '/']);
+// `n` (new trade) only makes sense while looking at the Trading view —
+// without this guard, e.g. pressing `n` while reading a note in the
+// Notes view popped the trade modal open out of context. `r` (sync)
+// stays global on purpose: it's a general "refresh my data" action,
+// useful from any view (Charts, for one, renders directly off the
+// same trades data). Esc-to-close-modal stays global too, since it
+// should always be able to close a modal no matter which view opened
+// it. (`/` and Cmd|Ctrl+K used to focus a trade search box that turned
+// out to be dead UI wired to nothing — removed together with that
+// cleanup, see trades.js.)
 
 function bindShortcuts() {
   document.addEventListener('keydown', (e) => {
@@ -90,18 +90,12 @@ function bindShortcuts() {
 
     if (typing || $('#app-shell').classList.contains('hidden')) return;
 
-    const isDashboardShortcut =
-      DASHBOARD_ONLY_SHORTCUTS.has(e.key) || (e.key === 'k' && (e.metaKey || e.ctrlKey));
-    if (isDashboardShortcut && currentView !== 'dashboard') return;
-
-    if (e.key === 'n' && !e.metaKey && !e.ctrlKey) { openTradeModal(); return; }
-    if (e.key === 'r' && !e.metaKey && !e.ctrlKey) { syncTrades();    return; }
-    if (e.key === '/') { e.preventDefault(); $('#trades-search')?.focus(); return; }
-    if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      $('#trades-search')?.focus();
+    if (e.key === 'n' && !e.metaKey && !e.ctrlKey) {
+      if (currentView !== 'dashboard') return;
+      openTradeModal();
       return;
     }
+    if (e.key === 'r' && !e.metaKey && !e.ctrlKey) { syncTrades(); return; }
   });
 }
 
@@ -147,9 +141,6 @@ function bindEvents() {
 
   const logoutBtn = $('#btn-logout');
   if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
-
-  // Search
-  $('#trades-search').addEventListener('input', (e) => applyFilter(e.target.value));
 
   // Password toggles
   setupToggle('toggle-pw',    'login-password');

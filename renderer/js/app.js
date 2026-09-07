@@ -74,7 +74,6 @@ function hasActiveSession() {
 // (manual CRUD). Read by calendar.js and charts.js.
 
 let trades         = [];
-let filteredTrades = [];
 let config         = {};
 let syncing        = false;
 let connecting     = false;
