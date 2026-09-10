@@ -132,6 +132,38 @@
   font-size: 10px;
 }
 
+/* Editable variant (Skills / Goals) — hover-revealed delete + inline add */
+.editable-list li {
+  justify-content: space-between;
+  cursor: default;
+}
+.editable-list li .li-text { flex: 1; }
+.editable-list li .li-remove {
+  opacity: 0;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+.editable-list li:hover .li-remove { opacity: 1; }
+.editable-list li .li-remove:hover { color: var(--danger, #e5484d); }
+
+.widget-add-input {
+  width: 100%;
+  margin-top: 6px;
+  background: transparent;
+  border: none;
+  border-top: 1px dashed var(--border);
+  padding-top: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--font);
+}
+.widget-add-input::placeholder { color: var(--text-faint); }
+.widget-add-input:focus { outline: none; color: var(--text); }
+
 /* ── Habit tracker ───────────────────────────────────── */
 
 .habit-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }

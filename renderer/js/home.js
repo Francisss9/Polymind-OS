@@ -24,6 +24,29 @@ let homeData = {
     { id: 2, name: 'Read 1 book', checked: false },
     { id: 3, name: 'Progress in projects', checked: false },
   ],
+  // Skills / Goals used to be hardcoded straight into index.html — no
+  // way to edit them without touching code. Seeded here once with the
+  // same content that used to live in the markup, then persisted the
+  // same way objectives already were (localStorage via saveHomeData).
+  skills: [
+    'Knowledge (books / podcasts / courses)',
+    'Finance (books / podcasts / studies)',
+    'Cooking (videos / family / research)',
+    'Cyber-security (github / books / videos / research / AI)',
+    'Trading (TJR / journaling / discipline / consistency)',
+    'Health (longevity / bio-hacking / books / podcasts / research)',
+  ],
+  goals: [
+    'Be consistent and disciplined',
+    'Get on a better shape & look ( <10% body-fat )',
+    'Be honest with myself and others',
+    'Develop a better relationship with God',
+    'Pass all exams in college 1-year (1 not passed yet)',
+    'Reach 300-day clean',
+    'Reach 1000€ in trading (long-term plans and day-trading)',
+    'Reach 12000€ net worth',
+    'Have a ≥15% ROI (in investments)',
+  ],
 };
 
 // ---- Persistence (non-Notion data) ----
@@ -395,6 +418,50 @@ function renderObjectives() {
 }
 
 // =========================================================
+// EDITABLE TEXT LISTS (Skills / Goals — local only, not synced)
+// =========================================================
+// Generic: renders `homeData[key]` (an array of strings) into `<ul id=listId>`,
+// each item removable on click of its hover-revealed "×", and wires an
+// adjacent `<input id=inputId>` so pressing Enter appends a new item.
+// Both persist through the same saveHomeData()/localStorage path the
+// scratchpad and objectives already use — no Notion database needed.
+
+function renderEditableList(key, listId) {
+  const list = document.getElementById(listId);
+  if (!list) return;
+
+  list.innerHTML = homeData[key].map((text, i) => `
+    <li data-index="${i}">
+      <span class="li-text">${escapeHtml(text)}</span>
+      <span class="li-remove" data-remove="${i}" title="Remove">×</span>
+    </li>
+  `).join('');
+
+  list.querySelectorAll('[data-remove]').forEach(el => {
+    el.addEventListener('click', () => {
+      homeData[key].splice(Number(el.dataset.remove), 1);
+      saveHomeData();
+      renderEditableList(key, listId);
+    });
+  });
+}
+
+function initEditableList(key, listId, inputId) {
+  renderEditableList(key, listId);
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  input.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const text = input.value.trim();
+    if (!text) return;
+    homeData[key].push(text);
+    saveHomeData();
+    input.value = '';
+    renderEditableList(key, listId);
+  });
+}
+
+// =========================================================
 // SCRATCHPAD (device-local only — not the Notes module, not synced)
 // =========================================================
 
@@ -429,6 +496,8 @@ async function initHome() {
   setInterval(updateClock, 10000);
 
   renderObjectives();
+  initEditableList('skills', 'skills-list', 'skills-add');
+  initEditableList('goals',  'goals-list',  'goals-add');
   initNotes();
   initLinks();
   initHabitTabs();
