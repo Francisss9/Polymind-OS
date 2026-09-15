@@ -101,3 +101,36 @@ test('store: cached collections', async (t) => {
     assert.deepEqual(store.getCachedNotes(), notes);
   });
 });
+
+test('store: daily log (local-only, never touches Notion)', async (t) => {
+  await t.test('getDailyLog returns null for a date with no entry yet', () => {
+    const store = createPolymindStore(createFakeBackingStore());
+    assert.equal(store.getDailyLog('2026-09-13'), null);
+  });
+
+  await t.test('setDailyLog/getDailyLog round-trip, with an updatedAt timestamp attached', () => {
+    const store = createPolymindStore(createFakeBackingStore());
+    const saved = store.setDailyLog('2026-09-13', 'Good trading day.');
+    assert.equal(saved.content, 'Good trading day.');
+    assert.ok(saved.updatedAt, 'an updatedAt timestamp is stamped on save');
+
+    const fetched = store.getDailyLog('2026-09-13');
+    assert.deepEqual(fetched, saved);
+  });
+
+  await t.test('each date is stored independently — writing one does not touch another', () => {
+    const store = createPolymindStore(createFakeBackingStore());
+    store.setDailyLog('2026-09-13', 'Day one.');
+    store.setDailyLog('2026-09-14', 'Day two.');
+    assert.equal(store.getDailyLog('2026-09-13').content, 'Day one.');
+    assert.equal(store.getDailyLog('2026-09-14').content, 'Day two.');
+  });
+
+  await t.test('overwriting an existing date replaces its content and updatedAt', () => {
+    const store = createPolymindStore(createFakeBackingStore());
+    store.setDailyLog('2026-09-13', 'First draft.');
+    const updated = store.setDailyLog('2026-09-13', 'Final version.');
+    assert.equal(updated.content, 'Final version.');
+    assert.equal(store.getDailyLog('2026-09-13').content, 'Final version.');
+  });
+});

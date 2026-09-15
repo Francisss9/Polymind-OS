@@ -473,6 +473,69 @@ function initNotes() {
 }
 
 // =========================================================
+// DAILY LOG (device-local only — one auto-created entry per day,
+// summarizing that day's habits + trades; the free-text part is never
+// synced to Notion, same spirit as the Scratchpad above)
+// =========================================================
+
+function dailyLogSummaryHtml(dateStr) {
+  const habitEntry = habitEntries.find(e => e.date === dateStr);
+  const habitsHtml = habitEntry
+    ? `<span class="dl-stat">${HABIT_PROPS.filter(p => habitEntry[p]).length}/${HABIT_PROPS.length}</span> habits done`
+    : `<span class="dl-empty">no habit entry synced for today</span>`;
+
+  const dayTrades = trades.filter(t => (t.date || '').slice(0, 10) === dateStr);
+  let tradesHtml;
+  if (!dayTrades.length) {
+    tradesHtml = `<span class="dl-empty">no trades today</span>`;
+  } else {
+    const wins = dayTrades.filter(t => (t.result || '').toLowerCase() === 'win').length;
+    const pnl = dayTrades.reduce((sum, t) => sum + (typeof t.pnl === 'number' ? t.pnl : 0), 0);
+    tradesHtml = `<span class="dl-stat">${dayTrades.length}</span> trade${dayTrades.length === 1 ? '' : 's'} (${wins}W/${dayTrades.length - wins}L) · <span class="dl-stat">${formatPnl(pnl)}</span>`;
+  }
+
+  return `${habitsHtml}<br>${tradesHtml}`;
+}
+
+function renderDailyLogSummary() {
+  const el = document.getElementById('daily-log-summary');
+  if (!el) return;
+  el.innerHTML = dailyLogSummaryHtml(todayISO());
+}
+
+async function initDailyLog() {
+  const dateEl = document.getElementById('daily-log-date');
+  const textEl = document.getElementById('daily-log-text');
+  if (!dateEl || !textEl) return;
+
+  const today = todayISO();
+  const [y, m, d] = today.split('-').map(Number);
+  dateEl.textContent = `${MONTHS_SHORT[m - 1]} ${d}, ${y}`;
+
+  renderDailyLogSummary(); // best-effort first pass; re-rendered once habits/trades are in from initHome()
+
+  try {
+    const existing = await window.polymind.dailyLog.get(today);
+    textEl.value = existing?.content || '';
+  } catch {
+    // Local-only feature; if IPC isn't wired up for some reason, the
+    // textarea just behaves as a plain (unsaved) box rather than crashing.
+  }
+
+  // Debounced, unlike the Scratchpad's every-keystroke save — this one
+  // crosses into the main process (electron-store), so it's worth not
+  // hammering IPC on every keypress the way an in-renderer
+  // localStorage.setItem() can afford to.
+  let saveTimer = null;
+  textEl.addEventListener('input', () => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      window.polymind.dailyLog.save(today, textEl.value).catch(() => {});
+    }, 400);
+  });
+}
+
+// =========================================================
 // LINKS
 // =========================================================
 
@@ -499,6 +562,7 @@ async function initHome() {
   initEditableList('skills', 'skills-list', 'skills-add');
   initEditableList('goals',  'goals-list',  'goals-add');
   initNotes();
+  initDailyLog();
   initLinks();
   initHabitTabs();
 
@@ -512,4 +576,5 @@ async function initHome() {
   // Load from cache first (instant), then sync in background
   await loadCachedHabits();
   await loadCachedGoals();
+  renderDailyLogSummary(); // habitEntries is populated by now; refresh with real data
 }

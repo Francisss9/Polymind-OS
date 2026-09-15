@@ -370,6 +370,14 @@ ipcMain.handle('notes:getCached', () => ({
   syncedAt: store.getNotesLastSyncedAt(),
 }));
 
+// =========================================================
+// DAILY LOG — local-only, no Notion involved at all (see kernel/store.js)
+// =========================================================
+
+ipcMain.handle('dailyLog:get', (event, date) => store.getDailyLog(date));
+
+ipcMain.handle('dailyLog:save', (event, { date, content }) => store.setDailyLog(date, content));
+
 ipcMain.handle('notes:sync', async () => {
   const { client, config } = requireNotionClient();
   const databaseId = requireDatabaseId(config, 'notesDbId', 'Notes DB');

@@ -281,6 +281,20 @@
                 <textarea id="home-notes" class="home-notes-area" placeholder="Jot something down (device-only, not synced)…" spellcheck="false"></textarea>
               </div>
 
+              <!-- Daily Log — local-only, one auto-created entry per day.
+                   Summary line is read-only, derived live from today's
+                   already-synced habits/trades. The textarea below it is
+                   the actual local, freeform journal entry. -->
+              <div class="home-widget">
+                <div class="widget-header">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M2 6.5h12M5 1.5v3M11 1.5v3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  <span class="widget-label">DAILY LOG</span>
+                  <span class="widget-date" id="daily-log-date"></span>
+                </div>
+                <div class="daily-log-summary" id="daily-log-summary"></div>
+                <textarea id="daily-log-text" class="home-notes-area" placeholder="What happened today? (device-only, not synced)…" spellcheck="false"></textarea>
+              </div>
+
               <!-- Skills -->
               <div class="home-widget">
                 <div class="widget-header">

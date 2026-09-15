@@ -67,6 +67,26 @@ function createPolymindStore(backingStore) {
   const balanceHistory = defineCachedResource('balanceHistory', 'balanceLastSyncedAt', []); // shares balance's sync timestamp
   const notes          = defineCachedResource('notes', 'notesLastSyncedAt', []);
 
+  // ---- Daily Log (local-only, never synced to Notion) ----
+  //
+  // Keyed by ISO date string ('YYYY-MM-DD') under a single object, not
+  // defineCachedResource — this isn't a synced collection with one
+  // "last synced at" timestamp, it's a per-day map the app itself owns
+  // end to end. Deliberately device-local: the first piece of daily
+  // journaling to live in Polymind OS itself rather than Notion.
+
+  function getDailyLog(date) {
+    const logs = backingStore.get('dailyLogs', {});
+    return logs[date] || null;
+  }
+
+  function setDailyLog(date, content) {
+    const logs = backingStore.get('dailyLogs', {});
+    logs[date] = { content, updatedAt: new Date().toISOString() };
+    backingStore.set('dailyLogs', logs);
+    return logs[date];
+  }
+
   return {
     getConfig, setConfig,
 
@@ -85,6 +105,8 @@ function createPolymindStore(backingStore) {
 
     getCachedNotes: notes.get,                 setCachedNotes: notes.set,
     getNotesLastSyncedAt: notes.getSyncedAt,   setNotesLastSyncedAt: notes.setSyncedAt,
+
+    getDailyLog, setDailyLog,
   };
 }
 

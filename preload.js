@@ -37,6 +37,13 @@ contextBridge.exposeInMainWorld('polymind', {
     update:    (note) => ipcRenderer.invoke('notes:update', note),
     delete:    (id)   => ipcRenderer.invoke('notes:delete', id),
   },
+  // Daily Log — local-only, device-stored (electron-store), never synced
+  // to Notion. First step of moving day-to-day journaling off Notion and
+  // onto Polymind OS itself, per the roadmap.
+  dailyLog: {
+    get:  (date)          => ipcRenderer.invoke('dailyLog:get', date),
+    save: (date, content) => ipcRenderer.invoke('dailyLog:save', { date, content }),
+  },
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
   window: {
     minimize: () => ipcRenderer.send('window-minimize'),

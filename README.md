@@ -165,7 +165,7 @@ modules/*/schema.js  (pure: Notion page → local object)
 |---|---|
 | `npm start` | Launch Polymind OS via Electron Forge |
 | `npm run make` | Package for distribution |
-| `npm test` | Run the full test suite (215 tests, `node:test`) |
+| `npm test` | Run the full test suite (227 tests, `node:test`) |
 
 ---
 
@@ -183,11 +183,11 @@ modules/*/schema.js  (pure: Notion page → local object)
 
 ## Testing
 
-215 tests, run with Node's built-in test runner — no extra framework beyond `jsdom` for DOM tests.
+227 tests, run with Node's built-in test runner — no extra framework beyond `jsdom` for DOM tests.
 
-**Kernel & schema layer (125 tests, `tests/kernel/` + `tests/modules/` + `tests/renderer/`)** — pure logic, faked dependencies: Notion API via `tests/helpers/fake-notion-client.js`, `electron-store` via `tests/helpers/fake-backing-store.js`, the encryption cipher via `tests/helpers/fake-cipher.js`.
+**Kernel & schema layer (130 tests, `tests/kernel/` + `tests/modules/` + `tests/renderer/`)** — pure logic, faked dependencies: Notion API via `tests/helpers/fake-notion-client.js`, `electron-store` via `tests/helpers/fake-backing-store.js`, the encryption cipher via `tests/helpers/fake-cipher.js`.
 
-**Renderer DOM layer (90 tests, `tests/renderer-dom/`)** — runs the *actual* `renderer/index.html` and the *actual* `renderer/js/*.js` source files inside a real `jsdom` window via `tests/renderer-dom/dom-harness.js`, not reimplementations. `window.polymind` (the real preload.js contextBridge surface) is faked with a controllable spy per method. This is what closes the gap pure-logic tests can't: it catches XSS regressions in real rendered HTML, silent event-wiring failures (a button that looks right in markup but has no listener — exactly the class of bug that cost real debugging time before this suite existed), and cross-module integration bugs like `bootSync()` calling the wrong sync path and silently updating a cache with no visible re-render. Covers `gate.js` (login/session/logout/first-run Notion connect), `sync.js` (fan-out correctness, resilience, concurrency guards), `settings.js` (save/test/disconnect, token-blank-means-keep-current), `notes.js` (XSS escaping is asserted against real parsed DOM output, not string matching), keyboard shortcuts being scoped to the correct view (`shortcuts.test.js`), and a dedicated `wiring.test.js` that exercises every button `bindEvents()` wires up.
+**Renderer DOM layer (97 tests, `tests/renderer-dom/`)** — runs the *actual* `renderer/index.html` and the *actual* `renderer/js/*.js` source files inside a real `jsdom` window via `tests/renderer-dom/dom-harness.js`, not reimplementations. `window.polymind` (the real preload.js contextBridge surface) is faked with a controllable spy per method. This is what closes the gap pure-logic tests can't: it catches XSS regressions in real rendered HTML, silent event-wiring failures (a button that looks right in markup but has no listener — exactly the class of bug that cost real debugging time before this suite existed), and cross-module integration bugs like `bootSync()` calling the wrong sync path and silently updating a cache with no visible re-render. Covers `gate.js` (login/session/logout/first-run Notion connect), `sync.js` (fan-out correctness, resilience, concurrency guards), `settings.js` (save/test/disconnect, token-blank-means-keep-current), `notes.js` (XSS escaping is asserted against real parsed DOM output, not string matching), keyboard shortcuts being scoped to the correct view (`shortcuts.test.js`), the Daily Log widget's date rendering, live summary derivation, and debounced local save (`home.test.js`), and a dedicated `wiring.test.js` that exercises every button `bindEvents()` wires up.
 
 `main.js` itself has no direct test coverage — it's tightly coupled to `ipcMain`/`BrowserWindow` and would need a heavier mocking harness to test meaningfully; the logic it calls into (schemas, sync, store, errors) is what's actually tested.
 
@@ -195,7 +195,7 @@ modules/*/schema.js  (pure: Notion page → local object)
 
 ## Roadmap
 
-- [ ] Daily Log — one auto-created note per day, linked to habits and trades
+- [x] Daily Log — one auto-created note per day, linked to habits and trades
 - [ ] Unified search — trades + habits + notes in one result set
 - [ ] `⌘K` command palette — navigate, create, search from anywhere
 - [ ] Bidirectional note links — `[[title]]` syntax

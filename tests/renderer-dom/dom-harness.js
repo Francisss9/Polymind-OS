@@ -123,6 +123,10 @@ function createRendererDom({ polymindOverrides = {} } = {}) {
       update: makeSpy(async (n) => ({ ...n, updatedAt: new Date().toISOString() })),
       delete: makeSpy(async () => ({ ok: true })),
     },
+    dailyLog: {
+      get:  makeSpy(async () => null),
+      save: makeSpy(async (date, content) => ({ content, updatedAt: new Date().toISOString() })),
+    },
     notion: {
       test: makeSpy(async () => ({ title: 'Test DB' })),
     },

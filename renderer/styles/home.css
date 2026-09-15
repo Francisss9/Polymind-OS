@@ -60,6 +60,19 @@
   color: var(--text-faint);
 }
 
+/* ── Daily Log ────────────────────────────────────── */
+
+.daily-log-summary {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--border);
+}
+.daily-log-summary .dl-stat { color: var(--text); font-weight: 500; }
+.daily-log-summary .dl-empty { color: var(--text-faint); font-style: italic; }
+
 /* ── Clock card ───────────────────────────────────────── */
 
 .widget-clock-card {

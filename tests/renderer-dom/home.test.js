@@ -82,3 +82,100 @@ test('Skills / Goals editable lists', async (t) => {
     assert.ok(li.textContent.includes('<img'), 'the raw text is still shown, just escaped');
   });
 });
+
+// Daily Log's summary line is derived from `trades` and `habitEntries` —
+// both `let`-declared in app.js/home.js, so (like `__test` in
+// dom-harness.js) they're mutated here via a plain reassignment inside
+// an injected <script>, not `window.trades = ...` (which would just set
+// an unrelated property and never reach the real binding).
+function setGlobals(window, { trades, habitEntries } = {}) {
+  const script = window.document.createElement('script');
+  script.textContent = `
+    ${trades !== undefined ? `trades = ${JSON.stringify(trades)};` : ''}
+    ${habitEntries !== undefined ? `habitEntries = ${JSON.stringify(habitEntries)};` : ''}
+  `;
+  window.document.body.appendChild(script);
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+test('Daily Log widget', async (t) => {
+  await t.test('shows today\'s date in the widget header', () => {
+    const { window } = createRendererDom();
+    window.initDailyLog();
+
+    const now = new Date();
+    const expected = `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+    assert.equal(window.document.getElementById('daily-log-date').textContent, expected);
+  });
+
+  await t.test('summary shows empty states when there is no habit entry or trades for today', () => {
+    const { window } = createRendererDom();
+    setGlobals(window, { trades: [], habitEntries: [] });
+    window.renderDailyLogSummary();
+
+    const html = window.document.getElementById('daily-log-summary').innerHTML;
+    assert.match(html, /no habit entry synced for today/);
+    assert.match(html, /no trades today/);
+  });
+
+  await t.test('summary reflects today\'s real habit count and trade stats once they load', () => {
+    const { window } = createRendererDom();
+    const today = window.todayISO();
+    setGlobals(window, {
+      trades: [
+        { date: today, pnl: 5, result: 'Win' },
+        { date: today, pnl: -2, result: 'Loss' },
+        { date: '2020-01-01', pnl: 999, result: 'Win' }, // a different day — must be excluded
+      ],
+      habitEntries: [
+        { date: today, 'Wake up 7 a.m.': true, GM: true, Read: true, Trading: false, Journal: false, Gym: false, '3L Hydration': false, Shower: false, 'Study/Work': false, Nutrition: false, God: false },
+      ],
+    });
+    window.renderDailyLogSummary();
+
+    const summary = window.document.getElementById('daily-log-summary');
+    assert.match(summary.innerHTML, /3\/11.*habits done/s);
+    assert.match(summary.textContent, /2 trades \(1W\/1L\)/);
+    assert.match(summary.textContent, /\+3\.00/, 'net P&L for today only (5 + -2), not the excluded 999 from another day');
+  });
+
+  await t.test('loads an existing entry\'s content into the textarea on init', async () => {
+    const { window, polymind } = createRendererDom();
+    polymind.dailyLog.get.mockResolvedValue({ content: 'Already wrote this earlier.', updatedAt: '2026-09-13T10:00:00.000Z' });
+
+    await window.initDailyLog();
+
+    assert.equal(window.document.getElementById('daily-log-text').value, 'Already wrote this earlier.');
+  });
+
+  await t.test('leaves the textarea empty when there is no saved entry yet', async () => {
+    const { window } = createRendererDom(); // default mock resolves null
+    await window.initDailyLog();
+    assert.equal(window.document.getElementById('daily-log-text').value, '');
+  });
+
+  await t.test('typing debounces the save instead of firing on every keystroke', async () => {
+    const { window, polymind } = createRendererDom();
+    await window.initDailyLog();
+
+    const textEl = window.document.getElementById('daily-log-text');
+    textEl.value = 'W';
+    textEl.dispatchEvent(new window.Event('input', { bubbles: true }));
+    textEl.value = 'Wr';
+    textEl.dispatchEvent(new window.Event('input', { bubbles: true }));
+    textEl.value = 'Writing.';
+    textEl.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+    assert.equal(polymind.dailyLog.save.calls.length, 0, 'no save yet — still inside the debounce window');
+
+    await wait(500);
+
+    assert.equal(polymind.dailyLog.save.calls.length, 1, 'exactly one save, not one per keystroke');
+    const [savedDate, savedContent] = polymind.dailyLog.save.calls[0];
+    assert.equal(savedDate, window.todayISO());
+    assert.equal(savedContent, 'Writing.');
+  });
+});
