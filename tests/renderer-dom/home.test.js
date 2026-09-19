@@ -179,3 +179,40 @@ test('Daily Log widget', async (t) => {
     assert.equal(savedContent, 'Writing.');
   });
 });
+
+test('toggleHabitCheckbox — error surfacing (regression: a rejected update used to only log to console, with zero on-screen sign that anything went wrong)', async (t) => {
+  function addCheckboxFixture(window, { pageId, habitName, checked }) {
+    const el = window.document.createElement('div');
+    el.className = `habit-checkbox${checked ? ' checked' : ''}`;
+    el.dataset.page = pageId;
+    el.dataset.habit = habitName;
+    el.dataset.checked = String(checked);
+    window.document.body.appendChild(el);
+    return el;
+  }
+
+  await t.test('on success, the checkbox stays toggled and no warning appears', async () => {
+    const { window, polymind } = createRendererDom();
+    setGlobals(window, { habitEntries: [{ id: 'p1', 'Wake up 7 a.m.': false }] });
+    const el = addCheckboxFixture(window, { pageId: 'p1', habitName: 'Wake up 7 a.m.', checked: false });
+    polymind.habits.updateCheckbox.mockResolvedValue({ ok: true });
+
+    await window.toggleHabitCheckbox('p1', 'Wake up 7 a.m.', false);
+
+    assert.ok(el.classList.contains('checked'));
+    assert.equal(window.document.getElementById('habit-sync-status').textContent, '');
+  });
+
+  await t.test('on failure, the checkbox reverts AND a warning naming the habit is shown, not just logged', async () => {
+    const { window, polymind } = createRendererDom();
+    setGlobals(window, { habitEntries: [{ id: 'p1', 'Wake up 7 a.m.': false }] });
+    const el = addCheckboxFixture(window, { pageId: 'p1', habitName: 'Wake up 7 a.m.', checked: false });
+    polymind.habits.updateCheckbox.mockRejectedValue(new Error('object_not_found'));
+
+    await window.toggleHabitCheckbox('p1', 'Wake up 7 a.m.', false);
+
+    assert.equal(el.classList.contains('checked'), false, 'reverted back to unchecked');
+    const status = window.document.getElementById('habit-sync-status').textContent;
+    assert.match(status, /Wake up 7 a\.m\./, 'names which habit failed, not a generic message');
+  });
+});

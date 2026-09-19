@@ -55,7 +55,7 @@ function createRendererDom({ polymindOverrides = {} } = {}) {
   // instances. We never assert on actual rendering, so a minimal stub
   // that satisfies "doesn't throw when constructed / destroyed" is enough.
   window.Chart = class FakeChart {
-    constructor() { this.destroyed = false; }
+    constructor(canvas, config) { this.destroyed = false; this.canvas = canvas; this.config = config; }
     destroy() { this.destroyed = true; }
     update() {}
   };
@@ -179,6 +179,7 @@ function createRendererDom({ polymindOverrides = {} } = {}) {
       getCurrentBalance: () => currentBalance,
       isSyncing: () => syncing,
       getConnecting: () => connecting,
+      getChartInstances: () => _chartInstances,
     };
     if (typeof Notes !== 'undefined') window.Notes = Notes;
   `;

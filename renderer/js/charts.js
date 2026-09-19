@@ -125,15 +125,27 @@ function renderEquityCurve(tradeList, balanceHistory = []) {
     yAxisID: 'y',
   }];
 
-  // Add balance overlay if we have history
+  // Add balance overlay if we have history. Aligned to each trade's own
+  // date via forward-fill (not plotted at raw array index), because the
+  // two series have very different point counts — weekly balance
+  // snapshots vs. one point per trade — and Chart.js's shared category
+  // axis places dataset[i] at labels[i] regardless of what date that
+  // index "really" means. Before this fix, the balance line was
+  // silently squeezed into the first N trade-date slots (N = number of
+  // balance snapshots) instead of spanning the real timeline.
   const sortedBalance = [...balanceHistory]
     .filter(b => b.weekStart && b.balance != null)
     .sort((a, b) => a.weekStart.localeCompare(b.weekStart));
 
   if (sortedBalance.length) {
+    let idx = -1;
+    const alignedBalance = sorted.map(t => {
+      while (idx + 1 < sortedBalance.length && sortedBalance[idx + 1].weekStart <= t.date) idx++;
+      return idx >= 0 ? sortedBalance[idx].balance : null; // null until the first known snapshot
+    });
     datasets.push({
       label: 'Account Balance',
-      data: sortedBalance.map(b => b.balance),
+      data: alignedBalance,
       borderColor: 'rgba(255,255,255,0.18)',
       borderWidth: 1,
       borderDash: [4, 4],
@@ -141,8 +153,8 @@ function renderEquityCurve(tradeList, balanceHistory = []) {
       pointHoverRadius: 4,
       tension: 0.3,
       fill: false,
+      spanGaps: true, // the leading nulls (before the first balance snapshot) shouldn't break the line
       yAxisID: 'y2',
-      labels: sortedBalance.map(b => fmtChartDate(b.weekStart)),
     });
   }
 

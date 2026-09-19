@@ -84,8 +84,19 @@ async function syncBalance() {
   try {
     const { balance } = await window.polymind.balance.sync();
     updateBalanceStat(balance);
-    _lastRenderHash['charts'] = -1; // invalidate so charts re-render with new balance
-    if (typeof renderCharts === 'function') renderCharts(trades);
+    // Re-render only the equity chart (the one balance actually feeds),
+    // not all four charts. renderCharts() used to be called here, which
+    // destroys and rebuilds every canvas on the page — visually
+    // indistinguishable from a full page reload, for a change that only
+    // ever touches one line on one chart.
+    if (typeof renderEquityCurve === 'function') {
+      let balanceHistory = [];
+      try {
+        const cached = await window.polymind.balance.getCached();
+        balanceHistory = cached.history || [];
+      } catch { /* balance DB is optional; equity curve just renders without the overlay */ }
+      renderEquityCurve(trades, balanceHistory);
+    }
   } catch(e) {
     console.error('[balance] Sync failed:', e.message);
     const el = document.getElementById('charts-balance');

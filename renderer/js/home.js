@@ -191,6 +191,16 @@ async function toggleHabitCheckbox(pageId, habitName, currentValue) {
       document.querySelectorAll(`[data-progress-label="${pageId}"]`).forEach(lbl => lbl.textContent = pct + '%');
     }
     console.error('habit update failed', e);
+    // Surfaced, not just logged — a checkbox silently flipping back with
+    // zero on-screen explanation looks like a UI bug even when it's
+    // actually the Notion API rejecting the request (e.g. a property
+    // name that no longer exists after a rename in Notion).
+    const statusLbl = document.getElementById('habit-sync-status');
+    if (statusLbl) {
+      const prevText = statusLbl.textContent;
+      statusLbl.textContent = `⚠ Couldn't save "${habitName}" — check it still exists in Notion`;
+      setTimeout(() => { if (statusLbl.textContent.startsWith('⚠')) statusLbl.textContent = prevText; }, 5000);
+    }
   }
 }
 
