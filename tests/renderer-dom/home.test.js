@@ -131,7 +131,7 @@ test('Daily Log widget', async (t) => {
         { date: '2020-01-01', pnl: 999, result: 'Win' }, // a different day — must be excluded
       ],
       habitEntries: [
-        { date: today, 'Wake up 7 a.m.': true, GM: true, Read: true, Trading: false, Journal: false, Gym: false, '3L Hydration': false, Shower: false, 'Study/Work': false, Nutrition: false, God: false },
+        { date: today, 'Wake up early': true, GM: true, Read: true, Trading: false, Journal: false, Gym: false, '3L Hydration': false, Shower: false, 'Study/Work': false, Nutrition: false, God: false },
       ],
     });
     window.renderDailyLogSummary();
@@ -193,11 +193,11 @@ test('toggleHabitCheckbox — error surfacing (regression: a rejected update use
 
   await t.test('on success, the checkbox stays toggled and no warning appears', async () => {
     const { window, polymind } = createRendererDom();
-    setGlobals(window, { habitEntries: [{ id: 'p1', 'Wake up 7 a.m.': false }] });
-    const el = addCheckboxFixture(window, { pageId: 'p1', habitName: 'Wake up 7 a.m.', checked: false });
+    setGlobals(window, { habitEntries: [{ id: 'p1', 'Wake up early': false }] });
+    const el = addCheckboxFixture(window, { pageId: 'p1', habitName: 'Wake up early', checked: false });
     polymind.habits.updateCheckbox.mockResolvedValue({ ok: true });
 
-    await window.toggleHabitCheckbox('p1', 'Wake up 7 a.m.', false);
+    await window.toggleHabitCheckbox('p1', 'Wake up early', false);
 
     assert.ok(el.classList.contains('checked'));
     assert.equal(window.document.getElementById('habit-sync-status').textContent, '');
@@ -205,14 +205,14 @@ test('toggleHabitCheckbox — error surfacing (regression: a rejected update use
 
   await t.test('on failure, the checkbox reverts AND a warning naming the habit is shown, not just logged', async () => {
     const { window, polymind } = createRendererDom();
-    setGlobals(window, { habitEntries: [{ id: 'p1', 'Wake up 7 a.m.': false }] });
-    const el = addCheckboxFixture(window, { pageId: 'p1', habitName: 'Wake up 7 a.m.', checked: false });
+    setGlobals(window, { habitEntries: [{ id: 'p1', 'Wake up early': false }] });
+    const el = addCheckboxFixture(window, { pageId: 'p1', habitName: 'Wake up early', checked: false });
     polymind.habits.updateCheckbox.mockRejectedValue(new Error('object_not_found'));
 
-    await window.toggleHabitCheckbox('p1', 'Wake up 7 a.m.', false);
+    await window.toggleHabitCheckbox('p1', 'Wake up early', false);
 
     assert.equal(el.classList.contains('checked'), false, 'reverted back to unchecked');
     const status = window.document.getElementById('habit-sync-status').textContent;
-    assert.match(status, /Wake up 7 a\.m\./, 'names which habit failed, not a generic message');
+    assert.match(status, /Wake up early/, 'names which habit failed, not a generic message');
   });
 });

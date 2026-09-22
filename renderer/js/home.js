@@ -6,7 +6,7 @@
 
 const HOME_STORAGE_KEY = 'polymind_home';
 const HABIT_PROPS = [
-  'Wake up 7 a.m.', 'GM', 'Read', 'Trading', 'Journal',
+  'Wake up early', 'GM', 'Read', 'Trading', 'Journal',
   'Gym', '3L Hydration', 'Shower', 'Study/Work', 'Nutrition', 'God',
 ];
 

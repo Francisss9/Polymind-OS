@@ -34,5 +34,9 @@
     "chart.js": "^4.5.1",
     "electron-squirrel-startup": "^1.0.1",
     "electron-store": "^8.2.0"
+  },
+  "allowScripts": {
+    "electron@35.7.5": true,
+    "electron-winstaller@5.4.4": true
   }
 }

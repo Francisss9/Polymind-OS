@@ -2,7 +2,7 @@
 
 // Habit property names in Notion (checkboxes)
 const HABIT_PROPS = [
-  'Wake up 7 a.m.',
+  'Wake up early',
   'GM',
   'Read',
   'Trading',
